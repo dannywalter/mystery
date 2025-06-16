@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Flip Jump Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        padding: 0;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #1a202c;
+        color: white;
+        overflow: hidden;
+      }
+      #app-container {
+        position: relative;
+        height: 100dvh;
+        max-width: 100vw;
+        aspect-ratio: 9 / 16;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #game-container {
+        width: 100%;
+        height: 100%;
+        background: #2d3748;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      #controls {
+        position: absolute;
+        bottom: 5%;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+        box-sizing: border-box;
+        z-index: 20;
+      }
+      .control-btn {
+        width: 70px;
+        height: 70px;
+        background-color: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition:
+          background-color 0.1s ease,
+          transform 0.1s ease;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .control-btn:active {
+        background-color: rgba(255, 255, 255, 0.4);
+        transform: scale(0.95);
+      }
+      #move-controls {
+        display: flex;
+        gap: 20px;
+      }
+      .instructions {
+        position: absolute;
+        top: 7%;
+        left: 0;
+        right: 0;
+        text-align: center;
+        padding: 0 1rem;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #ammo-display {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 0.25rem 1rem;
+        border-radius: 9999px;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.min.js"></script>
+  </head>
+  <body class="bg-gray-900 text-white">
+    <div id="app-container">
+      <div class="instructions">
+        <p class="text-lg font-semibold">Tap to jump. Tap again in mid-air to shoot!</p>
+        <div id="ammo-display">Ammo: 8/8</div>
+      </div>
+
+      <div id="game-container" class="shadow-2xl">
+        <canvas id="gameCanvas"></canvas>
+      </div>
+
+      <div id="controls">
+        <div id="move-controls">
+          <button id="left-btn" class="control-btn">
+            <!-- left arrow SVG -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              fill="currentColor"
+              class="bi bi-arrow-left"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"
+              />
+            </svg>
+          </button>
+          <button id="right-btn" class="control-btn">
+            <!-- right arrow SVG -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              fill="currentColor"
+              class="bi bi-arrow-right"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"
+              />
+            </svg>
+          </button>
+        </div>
+        <div id="jump-control">
+          <button id="jump-btn" class="control-btn">
+            <!-- down arrow SVG -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              fill="currentColor"
+              class="bi bi-arrow-down"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const gameContainer = document.getElementById("game-container");
+      const leftBtn = document.getElementById("left-btn");
+      const rightBtn = document.getElementById("right-btn");
+      const jumpBtn = document.getElementById("jump-btn");
+      const ammoDisplay = document.getElementById("ammo-display");
+
+      // --- Game Configuration ---
+      const normalGravity = 0.6;
+      const reducedGravity = 0.1;
+      const jumpStrength = -13;
+      const playerSize = 30;
+      const playerSpeed = 8;
+      const playerColor = "#4299e1";
+      const groundHeight = 50;
+      const maxAmmo = 8;
+      const bulletSpeed = 10;
+      const bulletSize = 5;
+      const shootCooldown = 100; // ms
+
+      // --- Cached canvas dimensions ---
+      let canvasW = 0;
+      let canvasH = 0;
+      let dpr = window.devicePixelRatio || 1;
+      let groundY = 0;
+
+      // --- Player State ---
+      let player = {
+        x: 0,
+        y: 0,
+        width: playerSize,
+        height: playerSize,
+        velocityX: 0,
+        velocityY: 0,
+        ammo: maxAmmo,
+        canJump: true,
+      };
+
+      let bullets = [];
+      let isMovingLeft = false;
+      let isMovingRight = false;
+      let isJumpButtonPressed = false;
+      let shootPermissionGranted = false;
+      let lastShotTime = 0;
+      let lastAmmo = player.ammo;
+
+      // --- Pre-build player shape path ---
+      const playerPath = (() => {
+        const path = new Path2D();
+        const w = playerSize,
+          h = playerSize,
+          r = 10;
+        path.moveTo(-w / 2 + r, -h / 2);
+        path.arcTo(w / 2, -h / 2, w / 2, h / 2, r);
+        path.arcTo(w / 2, h / 2, -w / 2, h / 2, r);
+        path.arcTo(-w / 2, h / 2, -w / 2, -h / 2, r);
+        path.arcTo(-w / 2, -h / 2, w / 2, -h / 2, r);
+        path.closePath();
+        return path;
+      })();
+
+      // --- Resize & initialize ---
+      function resizeCanvas() {
+        dpr = window.devicePixelRatio || 1;
+        const rect = gameContainer.getBoundingClientRect();
+        canvasW = rect.width;
+        canvasH = rect.height;
+        canvas.width = canvasW * dpr;
+        canvas.height = canvasH * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        groundY = canvasH - groundHeight;
+
+        // initial placement
+        if (player.x === 0 && player.y === 0) {
+          player.x = canvasW / 2 - player.width / 2;
+          resetPlayerOnGround();
+        }
+      }
+
+      function resetPlayerOnGround() {
+        player.y = groundY - player.height;
+        player.velocityY = 0;
+        player.canJump = true;
+        shootPermissionGranted = false;
+        player.ammo = maxAmmo;
+        lastAmmo = player.ammo;
+        ammoDisplay.textContent = `Ammo: ${player.ammo}/${maxAmmo}`;
+      }
+
+      function shoot() {
+        const now = Date.now();
+        if (player.ammo > 0 && now - lastShotTime > shootCooldown) {
+          player.ammo--;
+          lastShotTime = now;
+          bullets.push({
+            x: player.x + player.width / 2 - bulletSize / 2,
+            y: player.y + player.height,
+            width: bulletSize,
+            height: bulletSize * 2,
+            velocityY: bulletSpeed,
+          });
+        }
+      }
+
+      function updateUI() {
+        if (player.ammo !== lastAmmo) {
+          ammoDisplay.textContent = `Ammo: ${player.ammo}/${maxAmmo}`;
+          lastAmmo = player.ammo;
+        }
+      }
+
+      function gameLoop() {
+        // --- Movement ---
+        player.velocityX = 0;
+        if (isMovingLeft) player.velocityX = -playerSpeed;
+        if (isMovingRight) player.velocityX = playerSpeed;
+        player.x += player.velocityX;
+
+        // --- Gravity & floating ---
+        const isFloating = shootPermissionGranted && isJumpButtonPressed && player.ammo > 0 && !player.canJump;
+        player.velocityY += isFloating ? reducedGravity : normalGravity;
+        player.y += player.velocityY;
+        if (isFloating) shoot();
+
+        // --- Collisions ---
+        if (player.y >= groundY - player.height && player.velocityY > 0) {
+          resetPlayerOnGround();
+        }
+        // horizontal bounds
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.width > canvasW) player.x = canvasW - player.width;
+
+        // --- Draw ---
+        ctx.fillStyle = "#2d3748";
+        ctx.fillRect(0, 0, canvasW, canvasH);
+
+        // bullets
+        ctx.fillStyle = "#f6e05e";
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          const b = bullets[i];
+          b.y += b.velocityY;
+          ctx.fillRect(b.x, b.y, b.width, b.height);
+          if (b.y > canvasH) bullets.splice(i, 1);
+        }
+
+        // ground
+        ctx.fillStyle = "#4a5568";
+        ctx.fillRect(0, groundY, canvasW, groundHeight);
+
+        // player
+        ctx.save();
+        ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+        ctx.fillStyle = playerColor;
+        ctx.fill(playerPath);
+        ctx.restore();
+
+        updateUI();
+        requestAnimationFrame(gameLoop);
+      }
+
+      function setupEventListeners() {
+        const addBtnListener = (el, down, up) => {
+          el.addEventListener("mousedown", down);
+          el.addEventListener("mouseup", up);
+          el.addEventListener("mouseleave", up);
+          el.addEventListener(
+            "touchstart",
+            (e) => {
+              e.preventDefault();
+              down();
+            },
+            { passive: false },
+          );
+          el.addEventListener(
+            "touchend",
+            (e) => {
+              e.preventDefault();
+              up();
+            },
+            { passive: false },
+          );
+        };
+
+        addBtnListener(
+          leftBtn,
+          () => (isMovingLeft = true),
+          () => (isMovingLeft = false),
+        );
+        addBtnListener(
+          rightBtn,
+          () => (isMovingRight = true),
+          () => (isMovingRight = false),
+        );
+
+        addBtnListener(
+          jumpBtn,
+          () => {
+            isJumpButtonPressed = true;
+            if (player.canJump) {
+              player.velocityY = jumpStrength;
+              player.canJump = false;
+            } else {
+              shootPermissionGranted = true;
+              shoot();
+            }
+          },
+          () => {
+            isJumpButtonPressed = false;
+          },
+        );
+      }
+
+      window.addEventListener("resize", resizeCanvas);
+
+      // --- Init ---
+      resizeCanvas();
+      setupEventListeners();
+      gameLoop();
+    </script>
+  </body>
+</html>
