@@ -97,6 +97,29 @@
         padding: 0.25rem 1rem;
         border-radius: 9999px;
       }
+      #health-display {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        gap: 5px;
+      }
+      .health-unit {
+        width: 20px;
+        height: 20px;
+        background-color: #f56565;
+        border-radius: 2px;
+      }
+      #score-display {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 1.25rem;
+        font-weight: 600;
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 0.25rem 1rem;
+        border-radius: 9999px;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.min.js"></script>
   </head>
@@ -109,6 +132,8 @@
 
       <div id="game-container" class="shadow-2xl">
         <canvas id="gameCanvas"></canvas>
+        <div id="health-display"></div>
+        <div id="score-display">Score: 0</div>
       </div>
 
       <div id="controls">
@@ -174,25 +199,80 @@
       const rightBtn = document.getElementById("right-btn");
       const jumpBtn = document.getElementById("jump-btn");
       const ammoDisplay = document.getElementById("ammo-display");
+      const healthDisplay = document.getElementById("health-display");
+      const scoreDisplay = document.getElementById("score-display");
+
+      // --- Audio ---
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      function createSound(type, frequency, duration) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        return {
+          play: () => {
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+          }
+        };
+      }
+      
+      const shootSound = () => createSound('square', 220, 0.1).play();
+      const landSound = () => createSound('sine', 150, 0.2).play();
+      const hitSound = () => createSound('square', 100, 0.3).play();
+      const pickupSound = () => createSound('sine', 440, 0.2).play();
 
       // --- Game Configuration ---
       const normalGravity = 0.6;
       const reducedGravity = 0.1;
       const jumpStrength = -13;
+      const constantFallSpeed = 6; // Constant falling speed
+      const maxFallingSpeed = 6;   // Maximum vertical speed when falling
       const playerSize = 30;
       const playerSpeed = 8;
       const playerColor = "#4299e1";
-      const groundHeight = 50;
+      const initialGroundHeight = 50;
       const maxAmmo = 8;
       const bulletSpeed = 10;
       const bulletSize = 5;
       const shootCooldown = 100; // ms
+      const initialHealth = 4;
+      const blockSize = playerSize; // Size of each platform block equal to player size
+      const enemySize = 22;
+      const enemyProjectileSize = 6;
+      const enemyShootRate = 120; // Higher = less frequent
+      const enemyProjectileSpeed = 3;
+      const pickupSize = 10;
+      const pickupValue = 50; // Score points
+      const enemyValue = 100; // Score points
+      const pickupDropChance = 0.3; // 30% chance
+      const blockDestructionValue = 15; // Score points for destroying a block
 
       // --- Cached canvas dimensions ---
       let canvasW = 0;
       let canvasH = 0;
       let dpr = window.devicePixelRatio || 1;
       let groundY = 0;
+      
+      // --- Game State ---
+      let gameStarted = false;
+      let gameOver = false;
+      let score = 0;
+      let depthTraveled = 0;
+      let fallSpeed = 1; // Initial vertical scroll speed
+      let maxFallSpeed = 4; // Maximum vertical scroll speed
+      let fallSpeedIncreaseRate = 0.0001; // How quickly fall speed increases
+
+      // --- Camera System ---
+      let cameraY = 0;
 
       // --- Player State ---
       let player = {
@@ -203,18 +283,29 @@
         velocityX: 0,
         velocityY: 0,
         ammo: maxAmmo,
+        health: initialHealth,
         canJump: true,
+        invulnerable: 0, // Invulnerability frames after getting hit
       };
 
+      // --- Game Objects ---
       let bullets = [];
+      let blocks = []; // Individual platform blocks
+      let platforms = []; // Platform configurations (templates)
+      let enemies = [];
+      let enemyProjectiles = [];
+      let pickups = [];
+      
+      // --- Control State ---
       let isMovingLeft = false;
       let isMovingRight = false;
       let isJumpButtonPressed = false;
       let shootPermissionGranted = false;
       let lastShotTime = 0;
       let lastAmmo = player.ammo;
+      let lastHealth = player.health;
 
-      // --- Pre-build player shape path ---
+      // --- Pre-build paths ---
       const playerPath = (() => {
         const path = new Path2D();
         const w = playerSize,
@@ -228,6 +319,180 @@
         path.closePath();
         return path;
       })();
+      
+      const enemyPath = (() => {
+        const path = new Path2D();
+        const size = enemySize;
+        const halfSize = size / 2;
+        
+        // Draw a turret-like shape
+        path.moveTo(-halfSize, halfSize); // Bottom left
+        path.lineTo(-halfSize, -halfSize / 2); // Up to mid-left
+        path.lineTo(-halfSize / 2, -halfSize); // To top-left
+        path.lineTo(halfSize / 2, -halfSize); // To top-right
+        path.lineTo(halfSize, -halfSize / 2); // To mid-right
+        path.lineTo(halfSize, halfSize); // To bottom-right
+        path.closePath();
+        
+        return path;
+      })();
+
+      // --- Platform Generation ---
+      function createPlatformBlocks(x, y, cols, rows) {
+        const platformBlocks = [];
+        
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            blocks.push({
+              x: x + col * blockSize,
+              y: y + row * blockSize,
+              width: blockSize,
+              height: blockSize,
+              type: 'normal'
+            });
+          }
+        }
+        
+        return platformBlocks;
+      }
+      
+      function generatePlatformPattern(x, y) {
+        // Choose a platform pattern
+        const patternType = Math.random();
+        
+        // Create different platform patterns based on probability
+        if (patternType < 0.4) {
+          // Simple horizontal platform (1x3, 1x4, etc.)
+          const width = Math.floor(Math.random() * 4) + 2; // 2 to 5 blocks wide (since blocks are larger now)
+          createPlatformBlocks(x, y, width, 1);
+          return { width: width * blockSize, height: blockSize };
+        } 
+        else if (patternType < 0.65) {
+          // L-shape platform
+          const width = Math.floor(Math.random() * 2) + 2; // 2 to 3 blocks wide
+          const height = 2; // 2 blocks tall (enough for player to jump through)
+          
+          // Horizontal part
+          createPlatformBlocks(x, y, width, 1);
+          
+          // Vertical part
+          createPlatformBlocks(x, y + blockSize, 1, height - 1);
+          
+          return { width: width * blockSize, height: height * blockSize };
+        }
+        else if (patternType < 0.8) {
+          // Small square platform (2x2)
+          createPlatformBlocks(x, y, 2, 2);
+          return { width: 2 * blockSize, height: 2 * blockSize };
+        }
+        else if (patternType < 0.9) {
+          // Single block (allows the player to create path by destroying adjacent blocks)
+          createPlatformBlocks(x, y, 1, 1);
+          return { width: blockSize, height: blockSize };
+        }
+        else {
+          // Wide platform with a gap (2-1-2 pattern)
+          createPlatformBlocks(x, y, 2, 1);
+          createPlatformBlocks(x + 3 * blockSize, y, 2, 1);
+          return { width: 5 * blockSize, height: blockSize };
+        }
+      }
+      
+      function generateInitialPlatforms() {
+        blocks = [];
+        platforms = [];
+        
+        // Add ground platform (full width)
+        const groundY = canvasH - initialGroundHeight;
+        const groundBlockCount = Math.floor(canvasW / blockSize);
+        createPlatformBlocks(0, groundY, groundBlockCount, 1);
+        
+        // Generate several platforms below ground
+        const numInitialPlatforms = 15;
+        let lastY = groundY + 200; // Start below the ground
+        
+        for (let i = 0; i < numInitialPlatforms; i++) {
+          // Generate a random x position for the platform
+          const maxPlatformWidth = 7 * blockSize; // Maximum 7 blocks wide
+          const x = Math.floor(Math.random() * (canvasW - maxPlatformWidth) / blockSize) * blockSize;
+          const y = lastY;
+          
+          // Generate a platform pattern at this position
+          const platformInfo = generatePlatformPattern(x, y);
+          
+          // Maybe spawn an enemy on this platform (30% chance)
+          if (Math.random() < 0.3 && i > 2) {
+            const enemyX = x + Math.random() * (platformInfo.width - enemySize);
+            const enemyY = y - enemySize;
+            
+            enemies.push({
+              x: enemyX,
+              y: enemyY,
+              width: enemySize,
+              height: enemySize,
+              shootTimer: Math.floor(Math.random() * enemyShootRate)
+            });
+          }
+          
+          // Random vertical distance between platforms (with occasional bigger gaps)
+          const gap = Math.random() < 0.2 ? 
+                      Math.random() * 350 + 150 : 
+                      Math.random() * 150 + 50;
+          lastY += gap; // Move downward for next platform
+        }
+      }
+      
+      function generateNewPlatforms() {
+        // If there are no blocks (first run) or blocks are getting low, generate more
+        if (blocks.length === 0 || 
+            blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity) - cameraY < canvasH * 1.5) {
+          
+          // Find the bottom-most block
+          const bottomY = blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity);
+          
+          let newPlatformY = bottomY + Math.random() * 200 + 100;
+          
+          for (let i = 0; i < 8; i++) {
+            // Occasionally create shafts with no platforms (20% chance)
+            if (Math.random() < 0.2) {
+              newPlatformY += Math.random() * 300 + 200;
+              continue;
+            }
+            
+            // Generate a random x position for the platform
+            const maxPlatformWidth = 5 * blockSize; // Maximum 5 blocks wide (since blocks are larger)
+            const x = Math.floor(Math.random() * (canvasW - maxPlatformWidth) / blockSize) * blockSize;
+            const y = newPlatformY;
+            
+            // Generate a platform pattern at this position
+            const platformInfo = generatePlatformPattern(x, y);
+            
+            // Maybe spawn an enemy (30% chance)
+            if (Math.random() < 0.3) {
+              const enemyX = x + Math.random() * (platformInfo.width - enemySize);
+              const enemyY = y - enemySize;
+              
+              enemies.push({
+                x: enemyX,
+                y: enemyY,
+                width: enemySize,
+                height: enemySize,
+                shootTimer: Math.floor(Math.random() * enemyShootRate)
+              });
+            }
+            
+            // Random vertical distance between platforms
+            const gap = Math.random() < 0.2 ? 
+                        Math.random() * 400 + 200 : // Larger gaps for vertical shafts
+                        Math.random() * 200 + 100;  // Regular gaps between platforms
+            newPlatformY += gap; // Move downward for next platform
+          }
+        }
+        
+        // Clean up blocks that are far above the camera (no longer visible)
+        blocks = blocks.filter(b => b.y - cameraY > -canvasH * 2);
+        enemies = enemies.filter(e => e.y - cameraY > -canvasH * 2);
+      }
 
       // --- Resize & initialize ---
       function resizeCanvas() {
@@ -238,23 +503,51 @@
         canvas.width = canvasW * dpr;
         canvas.height = canvasH * dpr;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        groundY = canvasH - groundHeight;
+        groundY = canvasH - initialGroundHeight;
 
         // initial placement
-        if (player.x === 0 && player.y === 0) {
+        if (!gameStarted) {
           player.x = canvasW / 2 - player.width / 2;
           resetPlayerOnGround();
+          initializeHealthDisplay();
+          generateInitialPlatforms();
+          gameStarted = true;
+        }
+      }
+
+      function initializeHealthDisplay() {
+        healthDisplay.innerHTML = '';
+        for (let i = 0; i < player.health; i++) {
+          const healthUnit = document.createElement('div');
+          healthUnit.className = 'health-unit';
+          healthDisplay.appendChild(healthUnit);
         }
       }
 
       function resetPlayerOnGround() {
         player.y = groundY - player.height;
-        player.velocityY = 0;
+        player.velocityY = 0; // Reset vertical velocity
         player.canJump = true;
         shootPermissionGranted = false;
         player.ammo = maxAmmo;
         lastAmmo = player.ammo;
         ammoDisplay.textContent = `Ammo: ${player.ammo}/${maxAmmo}`;
+      }
+      
+      function resetGame() {
+        player.health = initialHealth;
+        initializeHealthDisplay();
+        score = 0;
+        depthTraveled = 0;
+        scoreDisplay.textContent = `Score: ${score}`;
+        player.velocityY = 0;
+        bullets = [];
+        enemyProjectiles = [];
+        pickups = [];
+        cameraY = 0;
+        gameOver = false;
+        generateInitialPlatforms();
+        resetPlayerOnGround();
       }
 
       function shoot() {
@@ -262,6 +555,8 @@
         if (player.ammo > 0 && now - lastShotTime > shootCooldown) {
           player.ammo--;
           lastShotTime = now;
+          
+          // Create bullet going downward
           bullets.push({
             x: player.x + player.width / 2 - bulletSize / 2,
             y: player.y + player.height,
@@ -269,6 +564,241 @@
             height: bulletSize * 2,
             velocityY: bulletSpeed,
           });
+          
+          // Play shoot sound
+          shootSound();
+        }
+      }
+      
+      function checkBulletCollisions() {
+        // Check player bullets against enemies and blocks
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          const bullet = bullets[i];
+          
+          let bulletHit = false;
+          
+          // Check collisions with enemies
+          for (let j = enemies.length - 1; j >= 0; j--) {
+            const enemy = enemies[j];
+            
+            if (
+              bullet.x < enemy.x + enemy.width &&
+              bullet.x + bullet.width > enemy.x &&
+              bullet.y < enemy.y + enemy.height &&
+              bullet.y + bullet.height > enemy.y
+            ) {
+              // Enemy hit by bullet
+              bullets.splice(i, 1);
+              enemies.splice(j, 1);
+              hitSound();
+              score += enemyValue;
+              bulletHit = true;
+              
+              // Chance to drop a pickup
+              if (Math.random() < pickupDropChance) {
+                pickups.push({
+                  x: enemy.x + enemy.width / 2 - pickupSize / 2,
+                  y: enemy.y + enemy.height / 2 - pickupSize / 2,
+                  width: pickupSize,
+                  height: pickupSize,
+                  type: 'point'
+                });
+              }
+              
+              break;
+            }
+          }
+          
+          if (bulletHit) continue;
+          
+          // Check collisions with blocks
+          for (let j = blocks.length - 1; j >= 0; j--) {
+            const block = blocks[j];
+            
+            if (
+              bullet.x < block.x + block.width &&
+              bullet.x + bullet.width > block.x &&
+              bullet.y < block.y + block.height &&
+              bullet.y + bullet.height > block.y
+            ) {
+              // Block hit by bullet
+              bullets.splice(i, 1);
+              blocks.splice(j, 1);
+              hitSound();
+              score += blockDestructionValue;
+              bulletHit = true;
+              break;
+            }
+          }
+          
+          if (bulletHit) continue;
+        }
+      }
+      
+      function checkPlayerCollisions() {
+        // Block collisions
+        let isOnPlatform = false;
+        
+        // Group blocks by their Y coordinate for more efficient collision detection
+        const blockRows = {};
+        blocks.forEach(block => {
+          const rowKey = Math.floor(block.y / blockSize);
+          if (!blockRows[rowKey]) blockRows[rowKey] = [];
+          blockRows[rowKey].push(block);
+        });
+        
+        // Calculate the player's row
+        const playerBottomRow = Math.floor((player.y + player.height) / blockSize);
+        
+        // Check collision with blocks in the row at player's feet and 1 row below
+        for (let rowOffset = 0; rowOffset <= 1; rowOffset++) {
+          const blockRow = blockRows[playerBottomRow + rowOffset];
+          if (!blockRow) continue;
+          
+          for (const block of blockRow) {
+            // Check if player is on or landing on a block
+            if (
+              // Player's bottom edge is within the block's collision zone
+              player.y + player.height >= block.y - 3 &&
+              player.y + player.height <= block.y + block.height/2 &&
+              // Player is horizontally overlapping the block by at least 50%
+              // This ensures the player can fall through single block holes
+              player.x + player.width * 0.75 > block.x &&
+              player.x + player.width * 0.25 < block.x + block.width
+            ) {
+              // Only snap to block if player is falling or already on ground
+              if (player.velocityY >= 0) {
+                player.y = block.y - player.height;
+                player.velocityY = 0;
+                
+                // If player wasn't on a platform before, play landing sound
+                if (!player.canJump) {
+                  landSound();
+                }
+                
+                player.canJump = true;
+                shootPermissionGranted = false;
+                isOnPlatform = true;
+                break;
+              }
+            }
+          }
+          
+          if (isOnPlatform) break;
+        }
+        
+        // If not on any platform, the player is falling
+        if (!isOnPlatform) {
+          player.canJump = false;
+          
+          // Check if player fell off screen
+          if (player.y - cameraY > canvasH + 100) {
+            // Player fell off screen, lose health
+            player.health--;
+            updateHealthDisplay();
+            hitSound();
+            
+            if (player.health <= 0) {
+              gameOver = true;
+              return;
+            }
+            
+            // Reset player position to be visible on screen
+            player.y = cameraY + 100;
+            player.velocityY = 0;
+            player.canJump = true;
+          }
+        }
+        
+        // Enemy collisions - player jumps on enemies
+        for (let i = enemies.length - 1; i >= 0; i--) {
+          const enemy = enemies[i];
+          
+          if (
+            player.x < enemy.x + enemy.width &&
+            player.x + player.width > enemy.x &&
+            player.y + player.height >= enemy.y &&
+            player.y + player.height <= enemy.y + enemy.height / 2 &&
+            player.velocityY > 0
+          ) {
+            // Player jumped on enemy
+            enemies.splice(i, 1);
+            hitSound();
+            score += enemyValue;
+            
+            // Bounce the player
+            player.velocityY = jumpStrength / 1.5;
+            
+            // Chance to drop a pickup
+            if (Math.random() < pickupDropChance) {
+              pickups.push({
+                x: enemy.x + enemy.width / 2 - pickupSize / 2,
+                y: enemy.y + enemy.height / 2 - pickupSize / 2,
+                width: pickupSize,
+                height: pickupSize,
+                type: 'point'
+              });
+            }
+          }
+        }
+        
+        // Enemy projectile collisions with player
+        if (player.invulnerable <= 0) {
+          for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+            const proj = enemyProjectiles[i];
+            
+            if (
+              proj.x < player.x + player.width &&
+              proj.x + proj.width > player.x &&
+              proj.y < player.y + player.height &&
+              proj.y + proj.height > player.y
+            ) {
+              // Player hit by enemy projectile
+              enemyProjectiles.splice(i, 1);
+              player.health--;
+              player.invulnerable = 60; // Give player invulnerability frames (60 frames ≈ 1 second)
+              hitSound();
+              updateHealthDisplay();
+              
+              if (player.health <= 0) {
+                gameOver = true;
+              }
+              
+              break;
+            }
+          }
+        }
+        
+        // Pickup collisions
+        for (let i = pickups.length - 1; i >= 0; i--) {
+          const pickup = pickups[i];
+          
+          if (
+            player.x < pickup.x + pickup.width &&
+            player.x + player.width > pickup.x &&
+            player.y < pickup.y + pickup.height &&
+            player.y + player.height > pickup.y
+          ) {
+            // Player collected pickup
+            pickups.splice(i, 1);
+            pickupSound();
+            
+            if (pickup.type === 'point') {
+              score += pickupValue;
+            }
+          }
+        }
+      }
+
+      function updateHealthDisplay() {
+        if (player.health !== lastHealth) {
+          healthDisplay.innerHTML = '';
+          for (let i = 0; i < player.health; i++) {
+            const healthUnit = document.createElement('div');
+            healthUnit.className = 'health-unit';
+            healthDisplay.appendChild(healthUnit);
+          }
+          lastHealth = player.health;
         }
       }
 
@@ -277,55 +807,239 @@
           ammoDisplay.textContent = `Ammo: ${player.ammo}/${maxAmmo}`;
           lastAmmo = player.ammo;
         }
+        
+        scoreDisplay.textContent = `Score: ${Math.floor(score)}`;
+        
+        updateHealthDisplay();
       }
 
       function gameLoop() {
+        if (gameOver) {
+          drawGameOver();
+          return;
+        }
+        
+        // --- Camera Movement ---
+        // Always center the camera on the player
+        const targetCameraY = player.y - canvasH / 2;
+        
+        // Use immediate camera positioning for smooth tracking
+        cameraY = targetCameraY;
+        
+        // Add to score based on depth traveled only when moving down
+        if (cameraY > depthTraveled) {
+          score += (cameraY - depthTraveled) * 0.1;
+          depthTraveled = cameraY;
+        }
+        
+        // Generate new platforms as needed
+        generateNewPlatforms();
+        
         // --- Movement ---
         player.velocityX = 0;
         if (isMovingLeft) player.velocityX = -playerSpeed;
         if (isMovingRight) player.velocityX = playerSpeed;
         player.x += player.velocityX;
 
-        // --- Gravity & floating ---
+        // --- Linear falling & floating ---
         const isFloating = shootPermissionGranted && isJumpButtonPressed && player.ammo > 0 && !player.canJump;
-        player.velocityY += isFloating ? reducedGravity : normalGravity;
-        player.y += player.velocityY;
-        if (isFloating) shoot();
-
-        // --- Collisions ---
-        if (player.y >= groundY - player.height && player.velocityY > 0) {
-          resetPlayerOnGround();
+        
+        if (isFloating) {
+          // Reduced floating while shooting
+          player.velocityY += reducedGravity;
+          shoot();
         }
-        // horizontal bounds
+        else if (!player.canJump) {
+          // Linear falling when not on a platform (constant speed instead of acceleration)
+          // Only apply if coming down from a jump or already falling
+          if (player.velocityY >= 0) {
+            player.velocityY = constantFallSpeed;
+          } else {
+            // Still accelerate when moving upward (jumping)
+            player.velocityY += normalGravity;
+          }
+        } else {
+          // No vertical movement when on platform
+          player.velocityY = 0;
+        }
+        
+        // Cap falling speed to prevent getting too fast
+        if (player.velocityY > maxFallingSpeed) {
+          player.velocityY = maxFallingSpeed;
+        }
+        
+        // Apply vertical movement
+        player.y += player.velocityY;
+        
+        // Call collision detection *after* movement
+        checkPlayerCollisions();
+
+        // --- Recharge ammo when on ground ---
+        if (player.canJump && player.ammo < maxAmmo && Math.random() < 0.05) {
+          player.ammo++;
+        }
+
+        // --- Decrease invulnerability timer ---
+        if (player.invulnerable > 0) player.invulnerable--;
+
+        // --- Horizontal bounds ---
         if (player.x < 0) player.x = 0;
         if (player.x + player.width > canvasW) player.x = canvasW - player.width;
-
-        // --- Draw ---
+        
+        // --- Update enemies ---
+        updateEnemies();
+        
+        // --- Check Bullet Collisions ---
+        checkBulletCollisions();
+        // Note: Player collisions are now checked right after player movement
+        
+        // --- Draw Everything ---
         ctx.fillStyle = "#2d3748";
         ctx.fillRect(0, 0, canvasW, canvasH);
 
-        // bullets
+        // Platform blocks
+        ctx.fillStyle = "#4a5568";
+        for (const block of blocks) {
+          const screenY = block.y - cameraY; // Adjust for camera
+          
+          if (screenY + block.height >= 0 && screenY <= canvasH) {
+            // Draw block with pixelated texture
+            ctx.fillRect(block.x, screenY, block.width, block.height);
+            
+            // Add texture to blocks (scaled to match larger block size)
+            ctx.fillStyle = "#3a4559";
+            ctx.fillRect(block.x + 3, screenY + 3, block.width - 6, 5);
+            ctx.fillRect(block.x + 3, screenY + 12, block.width - 10, 4);
+            ctx.fillRect(block.x + 8, screenY + 20, block.width - 16, 5);
+            ctx.fillStyle = "#4a5568";
+          }
+        }
+        
+        // Pickups
+        ctx.fillStyle = "#f6ad55"; // Orange color for pickups
+        for (const pickup of pickups) {
+          const screenY = pickup.y - cameraY; // Adjust for camera
+          
+          if (screenY + pickup.height >= 0 && screenY <= canvasH) {
+            ctx.fillRect(pickup.x, screenY, pickup.width, pickup.height);
+          }
+        }
+
+        // Enemy projectiles
+        ctx.fillStyle = "#fc8181"; // Red projectiles
+        for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+          const p = enemyProjectiles[i];
+          p.y += p.velocityY;
+          p.x += p.velocityX || 0;
+          
+          const screenY = p.y - cameraY;
+          
+          if (screenY <= -20 || screenY >= canvasH + 20 || p.x <= -20 || p.x >= canvasW + 20) {
+            enemyProjectiles.splice(i, 1);
+          } else {
+            ctx.fillRect(p.x, screenY, p.width, p.height);
+          }
+        }
+
+        // Player bullets
         ctx.fillStyle = "#f6e05e";
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
           b.y += b.velocityY;
-          ctx.fillRect(b.x, b.y, b.width, b.height);
-          if (b.y > canvasH) bullets.splice(i, 1);
+          
+          const screenY = b.y - cameraY;
+          
+          ctx.fillRect(b.x, screenY, b.width, b.height);
+          
+          if (screenY > canvasH) bullets.splice(i, 1);
         }
 
-        // ground
-        ctx.fillStyle = "#4a5568";
-        ctx.fillRect(0, groundY, canvasW, groundHeight);
+        // Enemies
+        ctx.fillStyle = "#f56565"; // Red for enemies
+        for (const enemy of enemies) {
+          const screenY = enemy.y - cameraY;
+          
+          if (screenY + enemy.height >= 0 && screenY <= canvasH) {
+            ctx.save();
+            ctx.translate(enemy.x + enemy.width / 2, screenY + enemy.height / 2);
+            ctx.fill(enemyPath);
+            ctx.restore();
+          }
+        }
 
-        // player
-        ctx.save();
-        ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-        ctx.fillStyle = playerColor;
-        ctx.fill(playerPath);
-        ctx.restore();
+        // Player (flashing when invulnerable)
+        if (player.invulnerable <= 0 || Math.floor(player.invulnerable / 5) % 2 === 0) {
+          ctx.save();
+          ctx.translate(player.x + player.width / 2, player.y - cameraY + player.height / 2);
+          ctx.fillStyle = playerColor;
+          ctx.fill(playerPath);
+          ctx.restore();
+        }
 
         updateUI();
         requestAnimationFrame(gameLoop);
+      }
+      
+      function updateEnemies() {
+        for (const enemy of enemies) {
+          // Enemy AI logic
+          enemy.shootTimer--;
+          
+          if (enemy.shootTimer <= 0) {
+            // Enemy shoots at player
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Only shoot if within a certain range and on screen
+            if (distance < canvasH / 2 && 
+                enemy.y - cameraY < canvasH && 
+                enemy.y - cameraY > 0) {
+              
+              // Calculate normalized direction to player
+              const dirX = dx / distance;
+              const dirY = dy / distance;
+              
+              enemyProjectiles.push({
+                x: enemy.x + enemy.width / 2 - enemyProjectileSize / 2,
+                y: enemy.y + enemy.height / 2 - enemyProjectileSize / 2,
+                width: enemyProjectileSize,
+                height: enemyProjectileSize,
+                velocityX: dirX * enemyProjectileSpeed,
+                velocityY: dirY * enemyProjectileSpeed
+              });
+              
+              enemy.shootTimer = enemyShootRate;
+            } else {
+              enemy.shootTimer = 20; // Try again soon if not in range
+            }
+          }
+        }
+      }
+      
+      function drawGameOver() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, canvasW, canvasH);
+        
+        ctx.font = "bold 30px Poppins";
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvasW / 2, canvasH / 2 - 40);
+        
+        ctx.font = "20px Poppins";
+        ctx.fillText(`Score: ${Math.floor(score)}`, canvasW / 2, canvasH / 2 + 10);
+        ctx.fillText("Tap to restart", canvasW / 2, canvasH / 2 + 50);
+        
+        // Handle restart
+        function restartHandler() {
+          canvas.removeEventListener("click", restartHandler);
+          canvas.removeEventListener("touchstart", restartHandler);
+          resetGame();
+          requestAnimationFrame(gameLoop);
+        }
+        
+        canvas.addEventListener("click", restartHandler);
+        canvas.addEventListener("touchstart", restartHandler);
       }
 
       function setupEventListeners() {
@@ -353,18 +1067,27 @@
 
         addBtnListener(
           leftBtn,
-          () => (isMovingLeft = true),
+          () => {
+            if (!gameOver) isMovingLeft = true;
+          },
           () => (isMovingLeft = false),
         );
         addBtnListener(
           rightBtn,
-          () => (isMovingRight = true),
+          () => {
+            if (!gameOver) isMovingRight = true;
+          },
           () => (isMovingRight = false),
         );
 
         addBtnListener(
           jumpBtn,
           () => {
+            if (gameOver) {
+              resetGame();
+              return;
+            }
+            
             isJumpButtonPressed = true;
             if (player.canJump) {
               player.velocityY = jumpStrength;
@@ -378,6 +1101,37 @@
             isJumpButtonPressed = false;
           },
         );
+        
+        // Keyboard controls
+        window.addEventListener("keydown", (e) => {
+          if (gameOver) {
+            if (e.key === ' ' || e.key === 'Enter') {
+              resetGame();
+              return;
+            }
+          }
+          
+          if (e.key === "ArrowLeft" || e.key === "a") isMovingLeft = true;
+          if (e.key === "ArrowRight" || e.key === "d") isMovingRight = true;
+          if (e.key === "ArrowUp" || e.key === "w" || e.key === " ") {
+            isJumpButtonPressed = true;
+            if (player.canJump) {
+              player.velocityY = jumpStrength;
+              player.canJump = false;
+            } else {
+              shootPermissionGranted = true;
+              shoot();
+            }
+          }
+        });
+        
+        window.addEventListener("keyup", (e) => {
+          if (e.key === "ArrowLeft" || e.key === "a") isMovingLeft = false;
+          if (e.key === "ArrowRight" || e.key === "d") isMovingRight = false;
+          if (e.key === "ArrowUp" || e.key === "w" || e.key === " ") {
+            isJumpButtonPressed = false;
+          }
+        });
       }
 
       window.addEventListener("resize", resizeCanvas);
