@@ -231,18 +231,26 @@
       const pickupSound = () => createSound('sine', 440, 0.2).play();
 
       // --- Game Configuration ---
-      const normalGravity = 0.6;
-      const reducedGravity = 0.1;
-      const jumpStrength = -13;
-      const constantFallSpeed = 6; // Constant falling speed
-      const maxFallingSpeed = 6;   // Maximum vertical speed when falling
+      const normalGravity = 0.55; // Reduced from 0.6 to make jumps feel lighter
+      const reducedGravity = 0.1; // Reduced from 0.1 for smoother floating
+      const jumpStrength = -13; // Stronger initial jump (was -13)
+      const constantFallSpeed = 15; // Reduced from 15 for less aggressive falling
+      const maxFallingSpeed = 15;   // Reduced from 15 to match constantFallSpeed
       const playerSize = 30;
       const playerSpeed = 8;
       const playerColor = "#4299e1";
       const initialGroundHeight = 50;
       const maxAmmo = 8;
-      const bulletSpeed = 10;
-      const bulletSize = 5;
+      const bulletSpeed = 25; // Increased from 10 for faster bullets
+      const bulletSize = 8; // Increased from 5 for larger bullets
+      const bulletLifetime = 500; // New: 1.5 seconds lifetime for bullets
+      const screenShakeDuration = 10; // New: milliseconds of screen shake
+      const screenShakeIntensity = 5; // New: pixels of screen shake
+      
+      // Add these new properties
+      let screenShake = 0;
+      let screenShakeX = 0;
+      let screenShakeY = 0;
       const shootCooldown = 100; // ms
       const initialHealth = 4;
       const blockSize = playerSize; // Size of each platform block equal to player size
@@ -556,17 +564,51 @@
           player.ammo--;
           lastShotTime = now;
           
-          // Create bullet going downward
+          // Apply upward force to counteract gravity if falling
+          if (!player.canJump && player.velocityY > 0) {
+            // Reset vertical velocity to hover
+            player.velocityY = 1; // Slight downward drift
+          }
+          
+          // Create bullet going downward with timestamp for lifetime tracking
           bullets.push({
             x: player.x + player.width / 2 - bulletSize / 2,
             y: player.y + player.height,
             width: bulletSize,
             height: bulletSize * 2,
             velocityY: bulletSpeed,
+            createdAt: now,
           });
+          
+          // Add screen shake effect
+          screenShake = screenShakeDuration;
           
           // Play shoot sound
           shootSound();
+          
+          // Add visual hover effect (optional particle effect)
+          createHoverEffect();
+        }
+      }
+      
+      // New function to create a visual hover effect
+      function createHoverEffect() {
+        // Create small upward particles for visual feedback
+        for (let i = 0; i < 3; i++) {
+          const particleSize = Math.random() * 3 + 2;
+          const particleSpeed = Math.random() * 2 + 1;
+          const particleX = player.x + Math.random() * player.width;
+          
+          bullets.push({
+            x: particleX,
+            y: player.y + player.height,
+            width: particleSize,
+            height: particleSize,
+            velocityY: -particleSpeed, // Upward movement
+            isEffect: true, // Mark as visual effect
+            createdAt: Date.now(),
+            lifetime: 300 // Short lifetime for effect particles
+          });
         }
       }
       
@@ -674,6 +716,8 @@
                 // If player wasn't on a platform before, play landing sound
                 if (!player.canJump) {
                   landSound();
+                  // Fully reload ammo when landing
+                  player.ammo = maxAmmo;
                 }
                 
                 player.canJump = true;
@@ -707,6 +751,7 @@
             player.y = cameraY + 100;
             player.velocityY = 0;
             player.canJump = true;
+            player.ammo = maxAmmo;
           }
         }
         
@@ -845,18 +890,30 @@
         const isFloating = shootPermissionGranted && isJumpButtonPressed && player.ammo > 0 && !player.canJump;
         
         if (isFloating) {
-          // Reduced floating while shooting
-          player.velocityY += reducedGravity;
+          // Hover in place while shooting - almost zero gravity
+          player.velocityY = 1; // Slight downward drift for visual effect
           shoot();
         }
         else if (!player.canJump) {
-          // Linear falling when not on a platform (constant speed instead of acceleration)
-          // Only apply if coming down from a jump or already falling
+          // Create a more natural jump arc with variable gravity
           if (player.velocityY >= 0) {
-            player.velocityY = constantFallSpeed;
+            // Going down - use constant fall speed but ramp up to it more gradually
+            if (player.velocityY < constantFallSpeed / 2) {
+              // Start with a gentler descent
+              player.velocityY += normalGravity * 1.2;
+            } else {
+              // Then transition to the constant fall speed
+              player.velocityY = constantFallSpeed;
+            }
           } else {
-            // Still accelerate when moving upward (jumping)
-            player.velocityY += normalGravity;
+            // Going up - reduced gravity at the peak of the jump for "hangtime"
+            if (player.velocityY > jumpStrength / 2) {
+              // Near the peak, apply less gravity for more "float"
+              player.velocityY += normalGravity * 0.7;
+            } else {
+              // Early in the jump, normal gravity
+              player.velocityY += normalGravity;
+            }
           }
         } else {
           // No vertical movement when on platform
@@ -874,10 +931,7 @@
         // Call collision detection *after* movement
         checkPlayerCollisions();
 
-        // --- Recharge ammo when on ground ---
-        if (player.canJump && player.ammo < maxAmmo && Math.random() < 0.05) {
-          player.ammo++;
-        }
+      
 
         // --- Decrease invulnerability timer ---
         if (player.invulnerable > 0) player.invulnerable--;
@@ -896,6 +950,15 @@
         // --- Draw Everything ---
         ctx.fillStyle = "#2d3748";
         ctx.fillRect(0, 0, canvasW, canvasH);
+        
+        // Apply screen shake if active
+        if (screenShake > 0) {
+          screenShake--;
+          screenShakeX = (Math.random() - 0.5) * 2 * screenShakeIntensity;
+          screenShakeY = (Math.random() - 0.5) * 2 * screenShakeIntensity;
+          ctx.save();
+          ctx.translate(screenShakeX, screenShakeY);
+        }
 
         // Platform blocks
         ctx.fillStyle = "#4a5568";
@@ -913,6 +976,11 @@
             ctx.fillRect(block.x + 8, screenY + 20, block.width - 16, 5);
             ctx.fillStyle = "#4a5568";
           }
+        }
+
+        // Reset screen shake transform if it was applied
+        if (screenShake > 0) {
+          ctx.restore();
         }
         
         // Pickups
@@ -942,16 +1010,44 @@
         }
 
         // Player bullets
-        ctx.fillStyle = "#f6e05e";
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
           b.y += b.velocityY;
           
           const screenY = b.y - cameraY;
           
-          ctx.fillRect(b.x, screenY, b.width, b.height);
-          
-          if (screenY > canvasH) bullets.splice(i, 1);
+          // Check if this is a hover effect particle
+          if (b.isEffect) {
+            // Draw hover effect particles with fade out
+            const age = Date.now() - b.createdAt;
+            const opacity = 1 - (age / b.lifetime);
+            
+            if (age > b.lifetime) {
+              bullets.splice(i, 1);
+              continue;
+            }
+            
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(b.x, screenY, b.width, b.height);
+            ctx.restore();
+          } else {
+            // Regular bullets
+            ctx.save();
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#ffd700";
+            ctx.fillStyle = "#ffffff"; // Bright center
+            ctx.fillRect(b.x + b.width/4, screenY, b.width/2, b.height);
+            ctx.fillStyle = "#f6e05e"; // Yellow outer part
+            ctx.fillRect(b.x, screenY, b.width, b.height);
+            ctx.restore();
+            
+            // Remove bullets that go off screen or exceed their lifetime
+            if (screenY > canvasH || Date.now() - b.createdAt > bulletLifetime) {
+              bullets.splice(i, 1);
+            }
+          }
         }
 
         // Enemies
