@@ -253,7 +253,7 @@
       let screenShakeY = 0;
       const shootCooldown = 100; // ms
       const initialHealth = 4;
-      const blockSize = playerSize; // Size of each platform block equal to player size
+      const blockSize = Math.round(playerSize * 1.25);
       const enemySize = 22;
       const enemyProjectileSize = 6;
       const enemyShootRate = 120; // Higher = less frequent
