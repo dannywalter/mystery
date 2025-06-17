@@ -438,7 +438,10 @@
               y: enemyY,
               width: enemySize,
               height: enemySize,
-              shootTimer: Math.floor(Math.random() * enemyShootRate)
+              velocityX: 0,
+              velocityY: 0,
+              speed: 0.7 + Math.random() * 0.6, // Random speed between 0.7-1.3
+              lastMoveTime: 0 // Track time for making movement decisions
             });
           }
           
@@ -481,11 +484,14 @@
               const enemyY = y - enemySize;
               
               enemies.push({
-                x: enemyX,
-                y: enemyY,
+                x: enemyX,  // Also fixed this from just x to enemyX
+                y: enemyY,  // Fixed from blockY to enemyY
                 width: enemySize,
                 height: enemySize,
-                shootTimer: Math.floor(Math.random() * enemyShootRate)
+                velocityX: 0,
+                velocityY: 0,
+                speed: 0.7 + Math.random() * 0.6, // Random speed between 0.7-1.3
+                lastMoveTime: 0
               });
             }
             
@@ -787,7 +793,7 @@
           }
         }
         
-        // Enemy projectile collisions with player
+        /* // Enemy projectile collisions with player
         if (player.invulnerable <= 0) {
           for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
             const proj = enemyProjectiles[i];
@@ -812,7 +818,7 @@
               break;
             }
           }
-        }
+        } */
         
         // Pickup collisions
         for (let i = pickups.length - 1; i >= 0; i--) {
@@ -993,7 +999,7 @@
           }
         }
 
-        // Enemy projectiles
+        /* // Enemy projectiles
         ctx.fillStyle = "#fc8181"; // Red projectiles
         for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
           const p = enemyProjectiles[i];
@@ -1007,7 +1013,7 @@
           } else {
             ctx.fillRect(p.x, screenY, p.width, p.height);
           }
-        }
+        } */
 
         // Player bullets
         for (let i = bullets.length - 1; i >= 0; i--) {
@@ -1051,14 +1057,35 @@
         }
 
         // Enemies
-        ctx.fillStyle = "#f56565"; // Red for enemies
         for (const enemy of enemies) {
           const screenY = enemy.y - cameraY;
           
           if (screenY + enemy.height >= 0 && screenY <= canvasH) {
+            // Draw floating effect (subtle up and down motion)
+            const floatOffset = Math.sin(Date.now() / 200 + enemy.x) * 3;
+            
             ctx.save();
-            ctx.translate(enemy.x + enemy.width / 2, screenY + enemy.height / 2);
+            ctx.translate(enemy.x + enemy.width / 2, screenY + enemy.height / 2 + floatOffset);
+            
+            // Draw enemy
+            ctx.fillStyle = "#f56565"; // Red for enemies
             ctx.fill(enemyPath);
+            
+            // Draw "wings" or floating indication
+            ctx.beginPath();
+            ctx.moveTo(-enemy.width/2 - 5, 0);
+            ctx.lineTo(-enemy.width/2, -5);
+            ctx.lineTo(-enemy.width/2 + 5, 0);
+            ctx.fillStyle = "#fc8181"; // Lighter red
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(enemy.width/2 - 5, 0);
+            ctx.lineTo(enemy.width/2, -5);
+            ctx.lineTo(enemy.width/2 + 5, 0);
+            ctx.fillStyle = "#fc8181"; // Lighter red
+            ctx.fill();
+            
             ctx.restore();
           }
         }
@@ -1077,37 +1104,102 @@
       }
       
       function updateEnemies() {
-        for (const enemy of enemies) {
-          // Enemy AI logic
-          enemy.shootTimer--;
+        const now = Date.now();
+        
+        for (let i = enemies.length - 1; i >= 0; i--) {
+          const enemy = enemies[i];
           
-          if (enemy.shootTimer <= 0) {
-            // Enemy shoots at player
-            const dx = player.x - enemy.x;
-            const dy = player.y - enemy.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+          // Only update enemies that are on screen or close to it
+          const screenY = enemy.y - cameraY;
+          if (screenY < -100 || screenY > canvasH + 100) {
+            continue; // Skip this enemy
+          }
+          
+          // Update enemy's target direction toward player
+          const dx = player.x - enemy.x;
+          const dy = player.y - enemy.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Make a movement decision every 500ms
+          // This creates "dumber" AI that doesn't instantly react
+          if (now - enemy.lastMoveTime > 500) {
+            enemy.lastMoveTime = now;
             
-            // Only shoot if within a certain range and on screen
-            if (distance < canvasH / 2 && 
-                enemy.y - cameraY < canvasH && 
-                enemy.y - cameraY > 0) {
-              
-              // Calculate normalized direction to player
-              const dirX = dx / distance;
-              const dirY = dy / distance;
-              
-              enemyProjectiles.push({
-                x: enemy.x + enemy.width / 2 - enemyProjectileSize / 2,
-                y: enemy.y + enemy.height / 2 - enemyProjectileSize / 2,
-                width: enemyProjectileSize,
-                height: enemyProjectileSize,
-                velocityX: dirX * enemyProjectileSpeed,
-                velocityY: dirY * enemyProjectileSpeed
-              });
-              
-              enemy.shootTimer = enemyShootRate;
+            // Normalize direction vector
+            if (distance > 0) {
+              enemy.targetDirX = dx / distance;
+              enemy.targetDirY = dy / distance;
             } else {
-              enemy.shootTimer = 20; // Try again soon if not in range
+              enemy.targetDirX = 0;
+              enemy.targetDirY = 0;
+            }
+          }
+          
+          // Apply movement toward player (with platform collision)
+          if (distance < 400) { // Only move if player is within range
+            // Gradually adjust velocity toward target direction (slow turning)
+            enemy.velocityX = enemy.velocityX * 0.9 + enemy.targetDirX * enemy.speed * 0.1;
+            enemy.velocityY = enemy.velocityY * 0.9 + enemy.targetDirY * enemy.speed * 0.1;
+            
+            // Cap maximum speed
+            const currentSpeed = Math.sqrt(enemy.velocityX * enemy.velocityX + enemy.velocityY * enemy.velocityY);
+            if (currentSpeed > enemy.speed) {
+              enemy.velocityX = (enemy.velocityX / currentSpeed) * enemy.speed;
+              enemy.velocityY = (enemy.velocityY / currentSpeed) * enemy.speed;
+            }
+            
+            // Apply movement
+            const newX = enemy.x + enemy.velocityX;
+            const newY = enemy.y + enemy.velocityY;
+            
+            // Check for collision with platforms (dumb AI that gets stuck)
+            let blocked = false;
+            
+            // Check platform collisions
+            for (const block of blocks) {
+              // Horizontal collision check
+              if (newY < block.y + block.height && 
+                  newY + enemy.height > block.y && 
+                  newX < block.x + block.width && 
+                  newX + enemy.width > block.x) {
+                blocked = true;
+                break;
+              }
+            }
+            
+            // Only move if not blocked
+            if (!blocked) {
+              enemy.x = newX;
+              enemy.y = newY;
+            } else {
+              // If blocked, reverse direction briefly (bounce off walls)
+              enemy.velocityX *= -0.5;
+              enemy.velocityY *= -0.5;
+            }
+          }
+          
+          // Player collision (if not jumping on top)
+          if (player.invulnerable <= 0 &&
+              player.x < enemy.x + enemy.width &&
+              player.x + player.width > enemy.x &&
+              player.y < enemy.y + enemy.height &&
+              player.y + player.height > enemy.y &&
+              !(player.y + player.height >= enemy.y && 
+                player.y + player.height <= enemy.y + enemy.height / 2 && 
+                player.velocityY > 0)) {
+            // Player hit by enemy from the side or below
+            player.health--;
+            player.invulnerable = 60; // Give player invulnerability frames (60 frames ≈ 1 second)
+            hitSound();
+            updateHealthDisplay();
+            
+            // Knock player back
+            const knockbackDir = player.x < enemy.x ? -1 : 1;
+            player.velocityX = knockbackDir * 8;
+            player.velocityY = -5;
+            
+            if (player.health <= 0) {
+              gameOver = true;
             }
           }
         }
