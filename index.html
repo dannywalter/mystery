@@ -105,10 +105,19 @@
         gap: 5px;
       }
       .health-unit {
-        width: 20px;
-        height: 20px;
-        background-color: #f56565;
+        width: 24px;
+        height: 24px;
+        background-color: transparent;
         border-radius: 2px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .health-unit img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
       #score-display {
         position: absolute;
@@ -213,9 +222,21 @@
       const wallRightImage = new Image();
       wallRightImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/wall-right-j6ktCizW2uufhrej52PtngwdIuIVzo.png";
       
+      const enemyImage = new Image();
+      enemyImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/alien-2HqllwtnwvnmklNebwwQXxuoMpcGtK.png";
+      
+      const playerImage = new Image();
+      playerImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/hero-1-nlc5QYIpITwaY1NGM8RChU0xafPC1y.png";
+      
+      const heartImage = new Image();
+      heartImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
+      
       let imageLoaded = false;
       let wallLeftImageLoaded = false;
       let wallRightImageLoaded = false;
+      let enemyImageLoaded = false;
+      let playerImageLoaded = false;
+      let heartImageLoaded = false;
       
       blockImage.onload = () => {
         imageLoaded = true;
@@ -227,6 +248,18 @@
       
       wallRightImage.onload = () => {
         wallRightImageLoaded = true;
+      };
+
+      enemyImage.onload = () => {
+        enemyImageLoaded = true;
+      };
+
+      playerImage.onload = () => {
+        playerImageLoaded = true;
+      };
+
+      heartImage.onload = () => {
+        heartImageLoaded = true;
       };
       
       blockImage.onerror = () => {
@@ -243,6 +276,22 @@
         console.warn("Failed to load right wall image, using fallback rendering");
         wallRightImageLoaded = false;
       };
+
+      enemyImage.onerror = () => {
+        console.warn("Failed to load enemy image, using fallback rendering");
+        enemyImageLoaded = false;
+      };
+      
+      playerImage.onerror = () => {
+        console.warn("Failed to load player image, using fallback rendering");
+        playerImageLoaded = false;
+      };
+
+      heartImage.onerror = () => {
+        console.warn("Failed to load heart image, using fallback rendering");
+        heartImageLoaded = false;
+      };
+      
 
       // --- Audio ---
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -299,7 +348,7 @@
       const shootCooldown = 100; // ms
       const initialHealth = 4;
       const blockSize = Math.round(playerSize * 1.5);
-      const enemySize = 22;
+      const enemySize = 40;
       const enemyProjectileSize = 6;
       const enemyShootRate = 120; // Higher = less frequent
       const enemyProjectileSpeed = 3;
@@ -456,121 +505,141 @@
         }
       }
       
-            function generateInitialPlatforms() {
-        blocks = [];
-        platforms = [];
+            // In the generateInitialPlatforms function, increase the number of initial platforms
+function generateInitialPlatforms() {
+  blocks = [];
+  platforms = [];
+  
+  // Add ground platform (full width but account for walls)
+  const groundY = canvasH - initialGroundHeight;
+  const groundBlockCount = Math.floor((canvasW - (wallWidth * 2)) / blockSize);
+  createPlatformBlocks(wallWidth, groundY, groundBlockCount, 1);
+  
+  // Generate more platforms below ground
+  const numInitialPlatforms = 25; // Increased from 15 to 25
+  let lastY = groundY + 200; // Start below the ground
+  
+  for (let i = 0; i < numInitialPlatforms; i++) {
+    // Generate a random x position for the platform - account for walls
+    const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
+    const x = Math.floor(Math.random() * (maxX - wallWidth) / blockSize) * blockSize + wallWidth;
+    const y = lastY;
+    
+    // Generate a platform pattern at this position
+    const platformInfo = generatePlatformPattern(x, y);
+    
+    // Maybe spawn an enemy on this platform (50% chance, increased from 30%)
+    if (Math.random() < 0.5 && i > 2) {
+      // Spawn 1-2 enemies on this platform
+      const enemyCount = Math.random() < 0.3 ? 2 : 1; // 30% chance for 2 enemies
+      
+      for (let j = 0; j < enemyCount; j++) {
+        // Space them out if there's more than one
+        const offset = j * (platformInfo.width / Math.max(enemyCount, 1));
+        const enemyX = x + offset + Math.random() * Math.max(0, platformInfo.width/enemyCount - enemySize);
+        const enemyY = y - enemySize;
         
-        // Add ground platform (full width but account for walls)
-        const groundY = canvasH - initialGroundHeight;
-        const groundBlockCount = Math.floor((canvasW - (wallWidth * 2)) / blockSize);
-        createPlatformBlocks(wallWidth, groundY, groundBlockCount, 1);
+        enemies.push({
+          x: enemyX,
+          y: enemyY,
+          width: enemySize,
+          height: enemySize,
+          velocityX: 0,
+          velocityY: 0,
+          speed: 0.7 + Math.random() * 0.6, // Random speed between 0.7-1.3
+          lastMoveTime: 0 // Track time for making movement decisions
+        });
+      }
+    }
+    
+    // Random vertical distance between platforms (with occasional bigger gaps)
+    // Decreased gaps to increase platform density
+    const gap = Math.random() < 0.2 ? 
+                Math.random() * 300 + 150 : // Decreased from 350 to 300
+                Math.random() * 120 + 50;   // Decreased from 150 to 120
+    lastY += gap; // Move downward for next platform
+  }
+}
+
+// In the generateNewPlatforms function, increase the number of platforms and enemy spawn rate
+function generateNewPlatforms() {
+  // If there are no blocks (first run) or blocks are getting low, generate more
+  if (blocks.length === 0 || 
+      blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity) - cameraY < canvasH * 1.5) {
+    
+    // Find the bottom-most block
+    const bottomY = blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity);
+    
+    let newPlatformY = bottomY + Math.random() * 200 + 100;
+    
+    // Generate more platforms (increased from 8 to 12)
+    for (let i = 0; i < 12; i++) {
+      // Decreased chance of creating shafts (from 20% to 15%)
+      if (Math.random() < 0.15) {
+        newPlatformY += Math.random() * 300 + 200;
+        continue;
+      }
+      
+      // Generate a random x position for the platform - account for walls
+      const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
+      const x = Math.floor(Math.random() * (maxX - wallWidth) / blockSize) * blockSize + wallWidth;
+      const y = newPlatformY;
+      
+      // Generate a platform pattern at this position
+      const platformInfo = generatePlatformPattern(x, y);
+      
+      // Increased enemy spawn rate from 30% to 50%
+      if (Math.random() < 0.5) {
+        // 30% chance to spawn multiple enemies on larger platforms
+        const enemyCount = (platformInfo.width > blockSize * 3 && Math.random() < 0.3) ? 
+                          Math.floor(Math.random() * 2) + 2 : 1; // 1-3 enemies
         
-        // Generate several platforms below ground
-        const numInitialPlatforms = 15;
-        let lastY = groundY + 200; // Start below the ground
-        
-        for (let i = 0; i < numInitialPlatforms; i++) {
-          // Generate a random x position for the platform - account for walls
-          const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
-          const x = Math.floor(Math.random() * (maxX - wallWidth) / blockSize) * blockSize + wallWidth;
-          const y = lastY;
+        for (let j = 0; j < enemyCount; j++) {
+          // Space them out if there's more than one
+          const platformWidth = Math.max(platformInfo.width, enemySize * 2);
+          const section = platformWidth / enemyCount;
+          const enemyX = x + (j * section) + Math.random() * Math.max(0, section - enemySize);
+          const enemyY = y - enemySize;
           
-          // Generate a platform pattern at this position
-          const platformInfo = generatePlatformPattern(x, y);
-          
-          // Maybe spawn an enemy on this platform (30% chance)
-          if (Math.random() < 0.3 && i > 2) {
-            const enemyX = x + Math.random() * Math.max(0, platformInfo.width - enemySize);
-            const enemyY = y - enemySize;
-            
-            enemies.push({
-              x: enemyX,
-              y: enemyY,
-              width: enemySize,
-              height: enemySize,
-              velocityX: 0,
-              velocityY: 0,
-              speed: 0.7 + Math.random() * 0.6, // Random speed between 0.7-1.3
-              lastMoveTime: 0 // Track time for making movement decisions
-            });
-          }
-          
-          // Random vertical distance between platforms (with occasional bigger gaps)
-          const gap = Math.random() < 0.2 ? 
-                      Math.random() * 350 + 150 : 
-                      Math.random() * 150 + 50;
-          lastY += gap; // Move downward for next platform
+          enemies.push({
+            x: enemyX,
+            y: enemyY,
+            width: enemySize,
+            height: enemySize,
+            velocityX: 0,
+            velocityY: 0,
+            speed: 0.7 + Math.random() * 0.8, // Increased max speed from 0.6 to 0.8
+            lastMoveTime: 0
+          });
         }
       }
       
-            function generateNewPlatforms() {
-        // If there are no blocks (first run) or blocks are getting low, generate more
-        if (blocks.length === 0 || 
-            blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity) - cameraY < canvasH * 1.5) {
-          
-          // Find the bottom-most block
-          const bottomY = blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity);
-          
-          let newPlatformY = bottomY + Math.random() * 200 + 100;
-          
-          for (let i = 0; i < 8; i++) {
-            // Occasionally create shafts with no platforms (20% chance)
-            if (Math.random() < 0.2) {
-              newPlatformY += Math.random() * 300 + 200;
-              continue;
-            }
-            
-            // Generate a random x position for the platform - account for walls
-            const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
-            const x = Math.floor(Math.random() * (maxX - wallWidth) / blockSize) * blockSize + wallWidth;
-            const y = newPlatformY;
-            
-            // Generate a platform pattern at this position
-            const platformInfo = generatePlatformPattern(x, y);
-            
-            // Maybe spawn an enemy (30% chance)
-            if (Math.random() < 0.3) {
-              const enemyX = x + Math.random() * Math.max(0, platformInfo.width - enemySize);
-              const enemyY = y - enemySize;
-              
-              enemies.push({
-                x: enemyX,
-                y: enemyY,
-                width: enemySize,
-                height: enemySize,
-                velocityX: 0,
-                velocityY: 0,
-                speed: 0.7 + Math.random() * 0.6, // Random speed between 0.7-1.3
-                lastMoveTime: 0
-              });
-            }
-            
-            // Random vertical distance between platforms
-            const gap = Math.random() < 0.2 ? 
-                        Math.random() * 400 + 200 : // Larger gaps for vertical shafts
-                        Math.random() * 200 + 100;  // Regular gaps between platforms
-            newPlatformY += gap; // Move downward for next platform
-          }
-        }
-        
-        // Clean up objects that are far from the camera (no longer visible)
-        // Remove objects that are too far above OR below the camera
-        blocks = blocks.filter(b => {
-          const screenY = b.y - cameraY;
-          return screenY > -canvasH * 2 && screenY < canvasH * 2;
-        });
-        
-        enemies = enemies.filter(e => {
-          const screenY = e.y - cameraY;
-          return screenY > -canvasH * 2 && screenY < canvasH * 2;
-        });
-        
-        // Also clean up pickups that are off-screen
-        pickups = pickups.filter(p => {
-          const screenY = p.y - cameraY;
-          return screenY > -canvasH * 2 && screenY < canvasH * 2;
-        });
-      }
+      // Random vertical distance between platforms (decreased distances for more density)
+      const gap = Math.random() < 0.2 ? 
+                  Math.random() * 350 + 180 : // Decreased from 400+200 to 350+180
+                  Math.random() * 180 + 80;   // Decreased from 200+100 to 180+80
+      newPlatformY += gap; // Move downward for next platform
+    }
+  }
+  
+  // Rest of the function remains the same...
+  // Clean up objects that are far from the camera (no longer visible)
+  blocks = blocks.filter(b => {
+    const screenY = b.y - cameraY;
+    return screenY > -canvasH * 2 && screenY < canvasH * 2;
+  });
+  
+  enemies = enemies.filter(e => {
+    const screenY = e.y - cameraY;
+    return screenY > -canvasH * 2 && screenY < canvasH * 2;
+  });
+  
+  // Also clean up pickups that are off-screen
+  pickups = pickups.filter(p => {
+    const screenY = p.y - cameraY;
+    return screenY > -canvasH * 2 && screenY < canvasH * 2;
+  });
+}
 
       // --- Resize & initialize ---
       function resizeCanvas() {
@@ -598,6 +667,21 @@
         for (let i = 0; i < player.health; i++) {
           const healthUnit = document.createElement('div');
           healthUnit.className = 'health-unit';
+          
+          // Create an image element
+          const heartImg = document.createElement('img');
+          heartImg.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
+          heartImg.style.width = "100%";
+          heartImg.style.height = "100%";
+          
+          // Add error handler for fallback
+          heartImg.onerror = function() {
+            // If image fails to load, show red square instead
+            this.style.display = "none";
+            healthUnit.style.backgroundColor = "#f56565"; // Red background
+          };
+          
+          healthUnit.appendChild(heartImg);
           healthDisplay.appendChild(healthUnit);
         }
       }
@@ -914,6 +998,21 @@
           for (let i = 0; i < player.health; i++) {
             const healthUnit = document.createElement('div');
             healthUnit.className = 'health-unit';
+            
+            // Create an image element
+            const heartImg = document.createElement('img');
+            heartImg.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
+            heartImg.style.width = "100%";
+            heartImg.style.height = "100%";
+            
+            // Add error handler for fallback
+            heartImg.onerror = function() {
+              // If image fails to load, show red square instead
+              this.style.display = "none";
+              healthUnit.style.backgroundColor = "#f56565"; // Red background
+            };
+            
+            healthUnit.appendChild(heartImg);
             healthDisplay.appendChild(healthUnit);
           }
           lastHealth = player.health;
@@ -1208,10 +1307,16 @@
             ctx.save();
             ctx.translate(Math.round(enemy.x + enemy.width / 2), Math.round(screenY + enemy.height / 2 + floatOffset));
             
-            // Draw enemy - simple red square
-            ctx.fillStyle = "#f56565"; // Red for enemies
-            const halfSize = enemySize / 2;
-            ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
+            if (enemyImageLoaded) {
+              // Draw enemy using the loaded image
+              const halfSize = enemySize / 2;
+              ctx.drawImage(enemyImage, -halfSize, -halfSize, enemySize, enemySize);
+            } else {
+              // Fallback to red square if image isn't loaded
+              ctx.fillStyle = "#f56565"; // Red for enemies
+              const halfSize = enemySize / 2;
+              ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
+            }
             
             ctx.restore();
           }
@@ -1221,8 +1326,30 @@
         if (player.invulnerable <= 0 || Math.floor(player.invulnerable / 5) % 2 === 0) {
           ctx.save();
           ctx.translate(player.x + player.width / 2, player.y - cameraY + player.height / 2);
-          ctx.fillStyle = playerColor;
-          ctx.fill(playerPath);
+          
+          if (playerImageLoaded) {
+            // Draw player using the loaded image
+            const halfWidth = playerSize / 2;
+            const halfHeight = playerSize / 2;
+            
+            // Account for the image's aspect ratio (545x365)
+            const imageAspectRatio = 545 / 365; // width / height
+            const scaledHalfWidth = halfHeight * imageAspectRatio;
+            
+            // Draw the image maintaining its aspect ratio
+            ctx.drawImage(
+              playerImage, 
+              -scaledHalfWidth, // Center horizontally based on aspect ratio
+              -halfHeight, 
+              scaledHalfWidth * 2, // Full width adjusted for aspect ratio
+              halfHeight * 2 // Full height
+            );
+          } else {
+            // Fallback to original player rendering if image isn't loaded
+            ctx.fillStyle = playerColor;
+            ctx.fill(playerPath);
+          }
+          
           ctx.restore();
         }
 
