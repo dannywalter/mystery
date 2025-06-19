@@ -202,6 +202,20 @@
       const healthDisplay = document.getElementById("health-display");
       const scoreDisplay = document.getElementById("score-display");
 
+      // --- Image Loading ---
+      const blockImage = new Image();
+      blockImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/block-bNl3WWgsBKqF75lkexi8dOq8RJp9Il.png";
+      let imageLoaded = false;
+      
+      blockImage.onload = () => {
+        imageLoaded = true;
+      };
+      
+      blockImage.onerror = () => {
+        console.warn("Failed to load block image, using fallback rendering");
+        imageLoaded = false;
+      };
+
       // --- Audio ---
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       
@@ -964,20 +978,24 @@
         }
 
         // Platform blocks
-        ctx.fillStyle = "#4a5568";
         for (const block of blocks) {
           const screenY = block.y - cameraY; // Adjust for camera
           
           if (screenY + block.height >= 0 && screenY <= canvasH) {
-            // Draw block with pixelated texture
-            ctx.fillRect(block.x, screenY, block.width, block.height);
-            
-            // Add texture to blocks (scaled to match larger block size)
-            ctx.fillStyle = "#3a4559";
-            ctx.fillRect(block.x + 3, screenY + 3, block.width - 6, 5);
-            ctx.fillRect(block.x + 3, screenY + 12, block.width - 10, 4);
-            ctx.fillRect(block.x + 8, screenY + 20, block.width - 16, 5);
-            ctx.fillStyle = "#4a5568";
+            // Draw block using image if loaded, otherwise use fallback
+            if (imageLoaded) {
+              ctx.drawImage(blockImage, block.x, screenY, block.width, block.height);
+            } else {
+              // Fallback to original block rendering
+              ctx.fillStyle = "#4a5568";
+              ctx.fillRect(block.x, screenY, block.width, block.height);
+              
+              // Add texture to blocks (scaled to match larger block size)
+              ctx.fillStyle = "#3a4559";
+              ctx.fillRect(block.x + 3, screenY + 3, block.width - 6, 5);
+              ctx.fillRect(block.x + 3, screenY + 12, block.width - 10, 4);
+              ctx.fillRect(block.x + 8, screenY + 20, block.width - 16, 5);
+            }
           }
         }
 
