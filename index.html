@@ -202,18 +202,46 @@
       const healthDisplay = document.getElementById("health-display");
       const scoreDisplay = document.getElementById("score-display");
 
-      // --- Image Loading ---
+            // --- Image Loading ---
       const blockImage = new Image();
       blockImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/block-bNl3WWgsBKqF75lkexi8dOq8RJp9Il.png";
+      
+      // Add the wall images for both sides
+      const wallLeftImage = new Image();
+      wallLeftImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/wall-left-6w36WuGgJgYFpThhqqYsPoAIgdpyMI.png";
+      
+      const wallRightImage = new Image();
+      wallRightImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/wall-right-j6ktCizW2uufhrej52PtngwdIuIVzo.png";
+      
       let imageLoaded = false;
+      let wallLeftImageLoaded = false;
+      let wallRightImageLoaded = false;
       
       blockImage.onload = () => {
         imageLoaded = true;
       };
       
+      wallLeftImage.onload = () => {
+        wallLeftImageLoaded = true;
+      };
+      
+      wallRightImage.onload = () => {
+        wallRightImageLoaded = true;
+      };
+      
       blockImage.onerror = () => {
         console.warn("Failed to load block image, using fallback rendering");
         imageLoaded = false;
+      };
+      
+      wallLeftImage.onerror = () => {
+        console.warn("Failed to load left wall image, using fallback rendering");
+        wallLeftImageLoaded = false;
+      };
+      
+      wallRightImage.onerror = () => {
+        console.warn("Failed to load right wall image, using fallback rendering");
+        wallRightImageLoaded = false;
       };
 
       // --- Audio ---
@@ -244,7 +272,7 @@
       const hitSound = () => createSound('square', 100, 0.3).play();
       const pickupSound = () => createSound('sine', 440, 0.2).play();
 
-      // --- Game Configuration ---
+            // --- Game Configuration ---
       const normalGravity = 0.55; // Reduced from 0.6 to make jumps feel lighter
       const reducedGravity = 0.1; // Reduced from 0.1 for smoother floating
       const jumpStrength = -13; // Stronger initial jump (was -13)
@@ -260,6 +288,9 @@
       const bulletLifetime = 500; // New: 1.5 seconds lifetime for bullets
       const screenShakeDuration = 10; // New: milliseconds of screen shake
       const screenShakeIntensity = 5; // New: pixels of screen shake
+      
+      // Add wall configuration
+      const wallWidth = Math.floor(playerSize / 2); // Half player size for wall width
       
       // Add these new properties
       let screenShake = 0;
@@ -425,23 +456,23 @@
         }
       }
       
-      function generateInitialPlatforms() {
+            function generateInitialPlatforms() {
         blocks = [];
         platforms = [];
         
-        // Add ground platform (full width)
+        // Add ground platform (full width but account for walls)
         const groundY = canvasH - initialGroundHeight;
-        const groundBlockCount = Math.floor(canvasW / blockSize);
-        createPlatformBlocks(0, groundY, groundBlockCount, 1);
+        const groundBlockCount = Math.floor((canvasW - (wallWidth * 2)) / blockSize);
+        createPlatformBlocks(wallWidth, groundY, groundBlockCount, 1);
         
         // Generate several platforms below ground
         const numInitialPlatforms = 15;
         let lastY = groundY + 200; // Start below the ground
         
         for (let i = 0; i < numInitialPlatforms; i++) {
-          // Generate a random x position for the platform - FIXED
-          const maxX = canvasW - blockSize; // Ensure at least one block fits
-          const x = Math.floor(Math.random() * maxX / blockSize) * blockSize;
+          // Generate a random x position for the platform - account for walls
+          const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
+          const x = Math.floor(Math.random() * (maxX - wallWidth) / blockSize) * blockSize + wallWidth;
           const y = lastY;
           
           // Generate a platform pattern at this position
@@ -472,7 +503,7 @@
         }
       }
       
-      function generateNewPlatforms() {
+            function generateNewPlatforms() {
         // If there are no blocks (first run) or blocks are getting low, generate more
         if (blocks.length === 0 || 
             blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity) - cameraY < canvasH * 1.5) {
@@ -489,9 +520,9 @@
               continue;
             }
             
-            // Generate a random x position for the platform - FIXED
-            const maxX = canvasW - blockSize; // Ensure at least one block fits
-            const x = Math.floor(Math.random() * maxX / blockSize) * blockSize;
+            // Generate a random x position for the platform - account for walls
+            const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
+            const x = Math.floor(Math.random() * (maxX - wallWidth) / blockSize) * blockSize + wallWidth;
             const y = newPlatformY;
             
             // Generate a platform pattern at this position
@@ -503,8 +534,8 @@
               const enemyY = y - enemySize;
               
               enemies.push({
-                x: enemyX,  // Also fixed this from just x to enemyX
-                y: enemyY,  // Fixed from blockY to enemyY
+                x: enemyX,
+                y: enemyY,
                 width: enemySize,
                 height: enemySize,
                 velocityX: 0,
@@ -973,14 +1004,12 @@
         // Call collision detection *after* movement
         checkPlayerCollisions();
 
-      
-
         // --- Decrease invulnerability timer ---
         if (player.invulnerable > 0) player.invulnerable--;
 
-        // --- Horizontal bounds ---
-        if (player.x < 0) player.x = 0;
-        if (player.x + player.width > canvasW) player.x = canvasW - player.width;
+        // --- Horizontal bounds --- (adjust for walls)
+        if (player.x < wallWidth) player.x = wallWidth;
+        if (player.x + player.width > canvasW - wallWidth) player.x = canvasW - wallWidth - player.width;
         
         // --- Update enemies ---
         updateEnemies();
@@ -1006,6 +1035,69 @@
           screenShakeY = (Math.random() - 0.5) * 2 * screenShakeIntensity;
           ctx.translate(screenShakeX, screenShakeY);
         }
+        
+        // Draw left wall using the provided image
+        // The image repeats vertically as the camera moves
+        if (wallLeftImageLoaded) {
+          // Calculate proper height based on original aspect ratio (92x2555px)
+          const originalWidth = 92;
+          const originalHeight = 2555;
+          const aspectRatio = originalHeight / originalWidth;
+          const scaledHeight = wallWidth * aspectRatio; // Maintain aspect ratio
+          
+          // Calculate how many full images needed to cover screen height
+          const imagesNeeded = Math.ceil(canvasH / scaledHeight) + 1; // +1 for smooth scrolling
+          
+          // Calculate the offset for seamless vertical scrolling
+          const yOffset = (cameraY % scaledHeight);
+          
+          // Draw multiple segments of the wall to cover the screen height
+          for (let i = 0; i < imagesNeeded; i++) {
+            const yPos = i * scaledHeight - yOffset;
+            ctx.drawImage(
+              wallLeftImage,
+              0, // x position on canvas
+              yPos, // y position on canvas
+              wallWidth, // width on canvas
+              scaledHeight // height on canvas, maintaining aspect ratio
+            );
+          }
+        } else {
+          // Fallback if image doesn't load
+          ctx.fillStyle = "#1a202c"; // Darker color for walls
+          ctx.fillRect(0, 0, wallWidth, canvasH);
+        }
+        
+        // Draw right wall using the provided image - same technique as left wall
+        if (wallRightImageLoaded) {
+          // Calculate proper height based on original aspect ratio (assuming the same for right wall)
+          const originalWidth = 92;
+          const originalHeight = 2555;
+          const aspectRatio = originalHeight / originalWidth;
+          const scaledHeight = wallWidth * aspectRatio; // Maintain aspect ratio
+          
+          // Calculate how many full images needed to cover screen height
+          const imagesNeeded = Math.ceil(canvasH / scaledHeight) + 1; // +1 for smooth scrolling
+          
+          // Calculate the offset for seamless vertical scrolling
+          const yOffset = (cameraY % scaledHeight);
+          
+          // Draw multiple segments of the wall to cover the screen height
+          for (let i = 0; i < imagesNeeded; i++) {
+            const yPos = i * scaledHeight - yOffset;
+            ctx.drawImage(
+              wallRightImage,
+              canvasW - wallWidth, // x position on canvas (right side)
+              yPos, // y position on canvas
+              wallWidth, // width on canvas
+              scaledHeight // height on canvas, maintaining aspect ratio
+            );
+          }
+        } else {
+          // Fallback if image doesn't load
+          ctx.fillStyle = "#1a202c"; // Darker color for walls
+          ctx.fillRect(canvasW - wallWidth, 0, wallWidth, canvasH);
+        }
 
         // Platform blocks
         for (const block of blocks) {
@@ -1030,8 +1122,8 @@
           }
         }
 
-        // Reset screen shake transform if it was applied
-        ctx.restore(); // Always restore the context state, regardless of screen shake
+        // Reset screen shake transform
+        ctx.restore(); // Always restore the context state
         
         // Pickups
         ctx.fillStyle = "#f6ad55"; // Orange color for pickups
