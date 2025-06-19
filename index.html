@@ -242,7 +242,7 @@
       const initialGroundHeight = 50;
       const maxAmmo = 8;
       const bulletSpeed = 25; // Increased from 10 for faster bullets
-      const bulletSize = 8; // Increased from 5 for larger bullets
+      const bulletSize = 10; // Increased from 5 for larger bullets
       const bulletLifetime = 500; // New: 1.5 seconds lifetime for bullets
       const screenShakeDuration = 10; // New: milliseconds of screen shake
       const screenShakeIntensity = 5; // New: pixels of screen shake
@@ -253,7 +253,7 @@
       let screenShakeY = 0;
       const shootCooldown = 100; // ms
       const initialHealth = 4;
-      const blockSize = Math.round(playerSize * 1.25);
+      const blockSize = Math.round(playerSize * 1.5);
       const enemySize = 22;
       const enemyProjectileSize = 6;
       const enemyShootRate = 120; // Higher = less frequent
@@ -333,14 +333,8 @@
         const size = enemySize;
         const halfSize = size / 2;
         
-        // Draw a turret-like shape
-        path.moveTo(-halfSize, halfSize); // Bottom left
-        path.lineTo(-halfSize, -halfSize / 2); // Up to mid-left
-        path.lineTo(-halfSize / 2, -halfSize); // To top-left
-        path.lineTo(halfSize / 2, -halfSize); // To top-right
-        path.lineTo(halfSize, -halfSize / 2); // To mid-right
-        path.lineTo(halfSize, halfSize); // To bottom-right
-        path.closePath();
+        // Draw a simple square shape
+        path.rect(-halfSize, -halfSize, size, size);
         
         return path;
       })();
@@ -697,22 +691,22 @@
         
         // Calculate the player's row
         const playerBottomRow = Math.floor((player.y + player.height) / blockSize);
+        const checkRows = Math.min(2 + Math.floor(Math.abs(player.velocityY) / 10), 4); // Check more rows for fast-falling
         
-        // Check collision with blocks in the row at player's feet and 1 row below
-        for (let rowOffset = 0; rowOffset <= 1; rowOffset++) {
+        // Check collision with blocks in multiple rows below the player
+        for (let rowOffset = 0; rowOffset <= checkRows; rowOffset++) {
           const blockRow = blockRows[playerBottomRow + rowOffset];
           if (!blockRow) continue;
           
           for (const block of blockRow) {
             // Check if player is on or landing on a block
             if (
-              // Player's bottom edge is within the block's collision zone
-              player.y + player.height >= block.y - 3 &&
+              // Player's bottom edge is within the block's collision zone - increased tolerance
+              player.y + player.height >= block.y - 8 &&
               player.y + player.height <= block.y + block.height/2 &&
-              // Player is horizontally overlapping the block by at least 50%
-              // This ensures the player can fall through single block holes
-              player.x + player.width * 0.75 > block.x &&
-              player.x + player.width * 0.25 < block.x + block.width
+              // Significantly more lenient horizontal overlap requirement (20% overlap)
+              player.x + player.width * 0.8 > block.x &&
+              player.x + player.width * 0.2 < block.x + block.width
             ) {
               // Only snap to block if player is falling or already on ground
               if (player.velocityY >= 0) {
@@ -768,8 +762,11 @@
           if (
             player.x < enemy.x + enemy.width &&
             player.x + player.width > enemy.x &&
+            // Make sure we're checking if player's feet are at the top portion of enemy - more generous check
             player.y + player.height >= enemy.y &&
-            player.y + player.height <= enemy.y + enemy.height / 2 &&
+            player.y + player.height <= enemy.y + enemy.height * 0.6 && // Increased from 0.5 to 0.6
+            player.y < enemy.y + enemy.height * 0.5 && // Make sure player's top is above enemy midpoint
+            // Only count if player is falling down onto enemy
             player.velocityY > 0
           ) {
             // Player jumped on enemy
@@ -1067,24 +1064,10 @@
             ctx.save();
             ctx.translate(enemy.x + enemy.width / 2, screenY + enemy.height / 2 + floatOffset);
             
-            // Draw enemy
+            // Draw enemy - simple red square
             ctx.fillStyle = "#f56565"; // Red for enemies
-            ctx.fill(enemyPath);
-            
-            // Draw "wings" or floating indication
-            ctx.beginPath();
-            ctx.moveTo(-enemy.width/2 - 5, 0);
-            ctx.lineTo(-enemy.width/2, -5);
-            ctx.lineTo(-enemy.width/2 + 5, 0);
-            ctx.fillStyle = "#fc8181"; // Lighter red
-            ctx.fill();
-            
-            ctx.beginPath();
-            ctx.moveTo(enemy.width/2 - 5, 0);
-            ctx.lineTo(enemy.width/2, -5);
-            ctx.lineTo(enemy.width/2 + 5, 0);
-            ctx.fillStyle = "#fc8181"; // Lighter red
-            ctx.fill();
+            const halfSize = enemySize / 2;
+            ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
             
             ctx.restore();
           }
@@ -1183,24 +1166,31 @@
               player.x < enemy.x + enemy.width &&
               player.x + player.width > enemy.x &&
               player.y < enemy.y + enemy.height &&
-              player.y + player.height > enemy.y &&
-              !(player.y + player.height >= enemy.y && 
-                player.y + player.height <= enemy.y + enemy.height / 2 && 
-                player.velocityY > 0)) {
-            // Player hit by enemy from the side or below
-            player.health--;
-            player.invulnerable = 60; // Give player invulnerability frames (60 frames ≈ 1 second)
-            hitSound();
-            updateHealthDisplay();
-            
-            // Knock player back
-            const knockbackDir = player.x < enemy.x ? -1 : 1;
-            player.velocityX = knockbackDir * 8;
-            player.velocityY = -5;
-            
-            if (player.health <= 0) {
-              gameOver = true;
-            }
+              player.y + player.height > enemy.y) {
+                
+              // Using a more generous definition of "jumping on top" to prevent false damage
+              const jumpingOnEnemy = player.velocityY > 0 && 
+                                     player.y + player.height >= enemy.y && 
+                                     player.y + player.height <= enemy.y + enemy.height * 0.6 && // Increased from 0.5 to 0.6 (60% of enemy height)
+                                     player.y < enemy.y + enemy.height * 0.5; // Make sure player's top is above the enemy midpoint
+              
+              if (!jumpingOnEnemy) {
+                // Player hit by enemy from the side or below
+                player.health--;
+                player.invulnerable = 60; // Give player invulnerability frames (60 frames ≈ 1 second)
+                hitSound();
+                updateHealthDisplay();
+                
+                // Knock player back
+                const knockbackDir = player.x < enemy.x ? -1 : 1;
+                player.velocityX = knockbackDir * 8;
+                player.velocityY = -5;
+                
+                if (player.health <= 0) {
+                  gameOver = true;
+                }
+              }
+          
           }
         }
       }
