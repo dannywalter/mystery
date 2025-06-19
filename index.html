@@ -376,16 +376,19 @@
         // Choose a platform pattern
         const patternType = Math.random();
         
+        // Calculate available space to prevent overflow
+        const availableWidth = Math.floor((canvasW - x) / blockSize);
+        
         // Create different platform patterns based on probability
         if (patternType < 0.4) {
           // Simple horizontal platform (1x3, 1x4, etc.)
-          const width = Math.floor(Math.random() * 4) + 2; // 2 to 5 blocks wide (since blocks are larger now)
+          const width = Math.min(Math.floor(Math.random() * 4) + 2, availableWidth); // FIXED: Cap to available space
           createPlatformBlocks(x, y, width, 1);
           return { width: width * blockSize, height: blockSize };
         } 
         else if (patternType < 0.65) {
           // L-shape platform
-          const width = Math.floor(Math.random() * 2) + 2; // 2 to 3 blocks wide
+          const width = Math.min(Math.floor(Math.random() * 2) + 2, availableWidth); // FIXED: Cap to available space
           const height = 2; // 2 blocks tall (enough for player to jump through)
           
           // Horizontal part
@@ -398,8 +401,9 @@
         }
         else if (patternType < 0.8) {
           // Small square platform (2x2)
-          createPlatformBlocks(x, y, 2, 2);
-          return { width: 2 * blockSize, height: 2 * blockSize };
+          const width = Math.min(2, availableWidth); // FIXED: Cap to available space
+          createPlatformBlocks(x, y, width, 2);
+          return { width: width * blockSize, height: 2 * blockSize };
         }
         else if (patternType < 0.9) {
           // Single block (allows the player to create path by destroying adjacent blocks)
@@ -407,10 +411,17 @@
           return { width: blockSize, height: blockSize };
         }
         else {
-          // Wide platform with a gap (2-1-2 pattern)
-          createPlatformBlocks(x, y, 2, 1);
-          createPlatformBlocks(x + 3 * blockSize, y, 2, 1);
-          return { width: 5 * blockSize, height: blockSize };
+          // Wide platform with a gap (2-1-2 pattern) - FIXED: Only if enough space
+          if (availableWidth >= 5) {
+            createPlatformBlocks(x, y, 2, 1);
+            createPlatformBlocks(x + 3 * blockSize, y, 2, 1);
+            return { width: 5 * blockSize, height: blockSize };
+          } else {
+            // Fallback to simple platform
+            const width = Math.min(availableWidth, 3);
+            createPlatformBlocks(x, y, width, 1);
+            return { width: width * blockSize, height: blockSize };
+          }
         }
       }
       
@@ -428,9 +439,9 @@
         let lastY = groundY + 200; // Start below the ground
         
         for (let i = 0; i < numInitialPlatforms; i++) {
-          // Generate a random x position for the platform
-          const maxPlatformWidth = 7 * blockSize; // Maximum 7 blocks wide
-          const x = Math.floor(Math.random() * (canvasW - maxPlatformWidth) / blockSize) * blockSize;
+          // Generate a random x position for the platform - FIXED
+          const maxX = canvasW - blockSize; // Ensure at least one block fits
+          const x = Math.floor(Math.random() * maxX / blockSize) * blockSize;
           const y = lastY;
           
           // Generate a platform pattern at this position
@@ -438,7 +449,7 @@
           
           // Maybe spawn an enemy on this platform (30% chance)
           if (Math.random() < 0.3 && i > 2) {
-            const enemyX = x + Math.random() * (platformInfo.width - enemySize);
+            const enemyX = x + Math.random() * Math.max(0, platformInfo.width - enemySize);
             const enemyY = y - enemySize;
             
             enemies.push({
@@ -478,9 +489,9 @@
               continue;
             }
             
-            // Generate a random x position for the platform
-            const maxPlatformWidth = 5 * blockSize; // Maximum 5 blocks wide (since blocks are larger)
-            const x = Math.floor(Math.random() * (canvasW - maxPlatformWidth) / blockSize) * blockSize;
+            // Generate a random x position for the platform - FIXED
+            const maxX = canvasW - blockSize; // Ensure at least one block fits
+            const x = Math.floor(Math.random() * maxX / blockSize) * blockSize;
             const y = newPlatformY;
             
             // Generate a platform pattern at this position
@@ -488,7 +499,7 @@
             
             // Maybe spawn an enemy (30% chance)
             if (Math.random() < 0.3) {
-              const enemyX = x + Math.random() * (platformInfo.width - enemySize);
+              const enemyX = x + Math.random() * Math.max(0, platformInfo.width - enemySize);
               const enemyY = y - enemySize;
               
               enemies.push({
@@ -981,7 +992,8 @@
         for (const block of blocks) {
           const screenY = block.y - cameraY; // Adjust for camera
           
-          if (screenY + block.height >= 0 && screenY <= canvasH) {
+          // FIXED: Only draw blocks that are fully or mostly visible
+          if (screenY >= -5 && screenY <= canvasH + 5) { // Small tolerance for edge smoothing
             // Draw block using image if loaded, otherwise use fallback
             if (imageLoaded) {
               ctx.drawImage(blockImage, block.x, screenY, block.width, block.height);
