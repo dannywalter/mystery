@@ -1021,7 +1021,8 @@
         for (const pickup of pickups) {
           const screenY = pickup.y - cameraY; // Adjust for camera
           
-          if (screenY + pickup.height >= 0 && screenY <= canvasH) {
+          // FIXED: Only draw pickups that are fully or mostly visible
+          if (screenY >= -5 && screenY <= canvasH + 5) { // Small tolerance for edge smoothing
             ctx.fillRect(pickup.x, screenY, pickup.width, pickup.height);
           }
         }
@@ -1077,7 +1078,7 @@
             ctx.restore();
             
             // Remove bullets that go off screen or exceed their lifetime
-            if (screenY > canvasH || Date.now() - b.createdAt > bulletLifetime) {
+            if (screenY > canvasH + 5 || screenY < -5 || Date.now() - b.createdAt > bulletLifetime) {
               bullets.splice(i, 1);
             }
           }
@@ -1087,7 +1088,8 @@
         for (const enemy of enemies) {
           const screenY = enemy.y - cameraY;
           
-          if (screenY + enemy.height >= 0 && screenY <= canvasH) {
+          // FIXED: Only draw enemies that are fully or mostly visible
+          if (screenY >= -5 && screenY <= canvasH + 5) { // Small tolerance for edge smoothing
             // Draw floating effect (subtle up and down motion)
             const floatOffset = Math.sin(Date.now() / 200 + enemy.x) * 3;
             
