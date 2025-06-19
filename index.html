@@ -231,12 +231,16 @@
       const heartImage = new Image();
       heartImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
       
+      const coinSpriteImage = new Image();
+      coinSpriteImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/coin-sprite-vmZuxWs9R7cXZ1GmMT2LHOErRmILNZ.png";
+
       let imageLoaded = false;
       let wallLeftImageLoaded = false;
       let wallRightImageLoaded = false;
       let enemyImageLoaded = false;
       let playerImageLoaded = false;
       let heartImageLoaded = false;
+      let coinSpriteLoaded = false;
       
       blockImage.onload = () => {
         imageLoaded = true;
@@ -260,6 +264,10 @@
 
       heartImage.onload = () => {
         heartImageLoaded = true;
+      };
+      
+      coinSpriteImage.onload = () => {
+        coinSpriteLoaded = true;
       };
       
       blockImage.onerror = () => {
@@ -291,12 +299,37 @@
         console.warn("Failed to load heart image, using fallback rendering");
         heartImageLoaded = false;
       };
+
+      coinSpriteImage.onerror = () => {
+        console.warn("Failed to load coin sprite image, using fallback rendering");
+        coinSpriteLoaded = false;
+      };
       
 
       // --- Audio ---
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      let audioContext = null;
+      let audioInitialized = false;
+      
+      // Initialize audio on first user interaction
+      function initAudio() {
+        if (audioInitialized) return;
+        
+        // Create the audio context
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Resume the audio context (needed for Chrome and other browsers)
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+        
+        audioInitialized = true;
+        console.log("Audio initialized!");
+      }
       
       function createSound(type, frequency, duration) {
+        // Make sure audio is initialized
+        if (!audioInitialized || !audioContext) return { play: () => {} };
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
@@ -316,10 +349,63 @@
         };
       }
       
-      const shootSound = () => createSound('square', 220, 0.1).play();
-      const landSound = () => createSound('sine', 150, 0.2).play();
-      const hitSound = () => createSound('square', 100, 0.3).play();
-      const pickupSound = () => createSound('sine', 440, 0.2).play();
+      const shootSound = () => {
+        if (!audioInitialized) return;
+        createSound('square', 220, 0.1).play();
+      };
+      
+      const landSound = () => {
+        if (!audioInitialized) return;
+        createSound('sine', 150, 0.2).play();
+      };
+      
+      const hitSound = () => {
+        if (!audioInitialized) return;
+        createSound('square', 100, 0.3).play();
+      };
+      
+      // Updated coin pickup sound - more "bling"-like
+      function pickupSound() {
+        // Make sure audio is initialized
+        if (!audioInitialized || !audioContext) return;
+        
+        // First high note (initial "b")
+        const coinOsc1 = audioContext.createOscillator();
+        coinOsc1.type = 'sine';
+        coinOsc1.frequency.value = 880; // Higher pitched note (A5)
+        
+        // Second sustain note (the "ling")
+        const coinOsc2 = audioContext.createOscillator();
+        coinOsc2.type = 'triangle';
+        coinOsc2.frequency.value = 1318.5; // E6 note
+        
+        // Volume control for both oscillators
+        const gainNode1 = audioContext.createGain();
+        const gainNode2 = audioContext.createGain();
+        
+        // Set volume envelope for first note (quick attack, quick decay)
+        gainNode1.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode1.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
+        gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        
+        // Set volume envelope for second note (delayed start, longer decay)
+        gainNode2.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode2.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05); // Delay start
+        gainNode2.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.06); // Quick attack
+        gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3); // Longer decay
+        
+        // Connect audio nodes
+        coinOsc1.connect(gainNode1);
+        coinOsc2.connect(gainNode2);
+        gainNode1.connect(audioContext.destination);
+        gainNode2.connect(audioContext.destination);
+        
+        // Start and stop oscillators
+        coinOsc1.start();
+        coinOsc2.start();
+        coinOsc1.stop(audioContext.currentTime + 0.1);
+        coinOsc2.stop(audioContext.currentTime + 0.3);
+      }
 
             // --- Game Configuration ---
       const normalGravity = 0.55; // Reduced from 0.6 to make jumps feel lighter
@@ -352,7 +438,13 @@
       const enemyProjectileSize = 6;
       const enemyShootRate = 120; // Higher = less frequent
       const enemyProjectileSpeed = 3;
-      const pickupSize = 10;
+      const pickupSize = 20;
+      const coinFrameWidth = 100; // Width of a single frame in the coin sprite
+      const coinFrameCount = 23; // Total number of frames in the sprite
+      const coinAnimationSpeed = 2; // Frames to skip before showing next frame (lower = faster)
+      let coinAnimationFrame = 0; // Current animation frame
+      let coinAnimationCounter = 0; // Counter for animation timing
+
       const pickupValue = 50; // Score points
       const enemyValue = 100; // Score points
       const pickupDropChance = 0.3; // 30% chance
@@ -797,7 +889,9 @@ function generateNewPlatforms() {
                   y: enemy.y + enemy.height / 2 - pickupSize / 2,
                   width: pickupSize,
                   height: pickupSize,
-                  type: 'point'
+                  type: 'point',
+                  frameIndex: 0, // Starting frame for animation
+                  frameCounter: Math.floor(Math.random() * coinFrameCount) // Random start point for animation
                 });
               }
               
@@ -938,9 +1032,12 @@ function generateNewPlatforms() {
                 y: enemy.y + enemy.height / 2 - pickupSize / 2,
                 width: pickupSize,
                 height: pickupSize,
-                type: 'point'
+                type: 'point',
+                frameIndex: 0, // Starting frame for animation
+                frameCounter: Math.floor(Math.random() * coinFrameCount) // Random start point for animation
               });
             }
+            
           }
         }
         
@@ -1225,13 +1322,31 @@ function generateNewPlatforms() {
         ctx.restore(); // Always restore the context state
         
         // Pickups
-        ctx.fillStyle = "#f6ad55"; // Orange color for pickups
         for (const pickup of pickups) {
           const screenY = pickup.y - cameraY; // Adjust for camera
           
-          // FIXED: Only draw pickups that are fully or mostly visible
+          // Only draw pickups that are fully or mostly visible
           if (screenY >= -20 && screenY <= canvasH + 20) { // Increased tolerance for edge smoothing
-            ctx.fillRect(Math.round(pickup.x), Math.round(screenY), pickup.width, pickup.height);
+            if (coinSpriteLoaded) {
+              // Increment the animation counter for this pickup
+              pickup.frameCounter = (pickup.frameCounter + 1) % (coinAnimationSpeed * coinFrameCount);
+              
+              // Calculate the current frame index
+              pickup.frameIndex = Math.floor(pickup.frameCounter / coinAnimationSpeed);
+              
+              // Draw the correct frame from the sprite sheet
+              ctx.drawImage(
+                coinSpriteImage,
+                pickup.frameIndex * coinFrameWidth, 0, // Source x, y (frame position in sprite)
+                coinFrameWidth, 100, // Source width, height (size of frame in sprite)
+                Math.round(pickup.x), Math.round(screenY), // Destination x, y
+                pickup.width, pickup.height // Destination width, height
+              );
+            } else {
+              // Fallback to color rectangle if sprite not loaded
+              ctx.fillStyle = "#f6ad55"; // Orange color for pickups
+              ctx.fillRect(Math.round(pickup.x), Math.round(screenY), pickup.width, pickup.height);
+            }
           }
         }
 
