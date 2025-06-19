@@ -19,7 +19,6 @@
         background: #1a202c;
         color: white;
         overflow: hidden;
-      }
       #app-container {
         position: relative;
         height: 100dvh;
@@ -522,9 +521,23 @@
           }
         }
         
-        // Clean up blocks that are far above the camera (no longer visible)
-        blocks = blocks.filter(b => b.y - cameraY > -canvasH * 2);
-        enemies = enemies.filter(e => e.y - cameraY > -canvasH * 2);
+        // Clean up objects that are far from the camera (no longer visible)
+        // Remove objects that are too far above OR below the camera
+        blocks = blocks.filter(b => {
+          const screenY = b.y - cameraY;
+          return screenY > -canvasH * 2 && screenY < canvasH * 2;
+        });
+        
+        enemies = enemies.filter(e => {
+          const screenY = e.y - cameraY;
+          return screenY > -canvasH * 2 && screenY < canvasH * 2;
+        });
+        
+        // Also clean up pickups that are off-screen
+        pickups = pickups.filter(p => {
+          const screenY = p.y - cameraY;
+          return screenY > -canvasH * 2 && screenY < canvasH * 2;
+        });
       }
 
       // --- Resize & initialize ---
@@ -976,15 +989,20 @@
         // Note: Player collisions are now checked right after player movement
         
         // --- Draw Everything ---
+        // Explicitly clear the canvas completely before drawing the background
+        // Clear slightly larger area to prevent edge artifacts
+        ctx.clearRect(-10, -10, canvasW + 20, canvasH + 20);
+        
+        // Draw the background color
         ctx.fillStyle = "#2d3748";
         ctx.fillRect(0, 0, canvasW, canvasH);
         
         // Apply screen shake if active
+        ctx.save(); // Always save the context state, regardless of screen shake
         if (screenShake > 0) {
           screenShake--;
           screenShakeX = (Math.random() - 0.5) * 2 * screenShakeIntensity;
           screenShakeY = (Math.random() - 0.5) * 2 * screenShakeIntensity;
-          ctx.save();
           ctx.translate(screenShakeX, screenShakeY);
         }
 
@@ -996,25 +1014,23 @@
           if (screenY >= -5 && screenY <= canvasH + 5) { // Small tolerance for edge smoothing
             // Draw block using image if loaded, otherwise use fallback
             if (imageLoaded) {
-              ctx.drawImage(blockImage, block.x, screenY, block.width, block.height);
+              ctx.drawImage(blockImage, Math.round(block.x), Math.round(screenY), block.width, block.height);
             } else {
               // Fallback to original block rendering
               ctx.fillStyle = "#4a5568";
-              ctx.fillRect(block.x, screenY, block.width, block.height);
+              ctx.fillRect(Math.round(block.x), Math.round(screenY), block.width, block.height);
               
               // Add texture to blocks (scaled to match larger block size)
               ctx.fillStyle = "#3a4559";
-              ctx.fillRect(block.x + 3, screenY + 3, block.width - 6, 5);
-              ctx.fillRect(block.x + 3, screenY + 12, block.width - 10, 4);
-              ctx.fillRect(block.x + 8, screenY + 20, block.width - 16, 5);
+              ctx.fillRect(Math.round(block.x + 3), Math.round(screenY + 3), block.width - 6, 5);
+              ctx.fillRect(Math.round(block.x + 3), Math.round(screenY + 12), block.width - 10, 4);
+              ctx.fillRect(Math.round(block.x + 8), Math.round(screenY + 20), block.width - 16, 5);
             }
           }
         }
 
         // Reset screen shake transform if it was applied
-        if (screenShake > 0) {
-          ctx.restore();
-        }
+        ctx.restore(); // Always restore the context state, regardless of screen shake
         
         // Pickups
         ctx.fillStyle = "#f6ad55"; // Orange color for pickups
@@ -1022,8 +1038,8 @@
           const screenY = pickup.y - cameraY; // Adjust for camera
           
           // FIXED: Only draw pickups that are fully or mostly visible
-          if (screenY >= -5 && screenY <= canvasH + 5) { // Small tolerance for edge smoothing
-            ctx.fillRect(pickup.x, screenY, pickup.width, pickup.height);
+          if (screenY >= -20 && screenY <= canvasH + 20) { // Increased tolerance for edge smoothing
+            ctx.fillRect(Math.round(pickup.x), Math.round(screenY), pickup.width, pickup.height);
           }
         }
 
@@ -1050,6 +1066,13 @@
           
           const screenY = b.y - cameraY;
           
+          // Remove bullets that go off screen or exceed their lifetime
+          // Use a larger threshold to ensure complete removal
+          if (screenY > canvasH + 20 || screenY < -20 || Date.now() - b.createdAt > bulletLifetime) {
+            bullets.splice(i, 1);
+            continue;
+          }
+          
           // Check if this is a hover effect particle
           if (b.isEffect) {
             // Draw hover effect particles with fade out
@@ -1064,7 +1087,7 @@
             ctx.save();
             ctx.globalAlpha = opacity;
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(b.x, screenY, b.width, b.height);
+            ctx.fillRect(Math.round(b.x), Math.round(screenY), b.width, b.height);
             ctx.restore();
           } else {
             // Regular bullets
@@ -1072,15 +1095,11 @@
             ctx.shadowBlur = 10;
             ctx.shadowColor = "#ffd700";
             ctx.fillStyle = "#ffffff"; // Bright center
-            ctx.fillRect(b.x + b.width/4, screenY, b.width/2, b.height);
+            ctx.fillRect(Math.round(b.x + b.width/4), Math.round(screenY), b.width/2, b.height);
             ctx.fillStyle = "#f6e05e"; // Yellow outer part
-            ctx.fillRect(b.x, screenY, b.width, b.height);
+            ctx.fillRect(Math.round(b.x), Math.round(screenY), b.width, b.height);
             ctx.restore();
-            
-            // Remove bullets that go off screen or exceed their lifetime
-            if (screenY > canvasH + 5 || screenY < -5 || Date.now() - b.createdAt > bulletLifetime) {
-              bullets.splice(i, 1);
-            }
+          
           }
         }
 
@@ -1088,13 +1107,13 @@
         for (const enemy of enemies) {
           const screenY = enemy.y - cameraY;
           
-          // FIXED: Only draw enemies that are fully or mostly visible
-          if (screenY >= -5 && screenY <= canvasH + 5) { // Small tolerance for edge smoothing
+          // FIXED: Only draw enemies that are fully or mostly visible with larger margin
+          if (screenY >= -20 && screenY <= canvasH + 20) { // Increased tolerance for edge smoothing
             // Draw floating effect (subtle up and down motion)
             const floatOffset = Math.sin(Date.now() / 200 + enemy.x) * 3;
             
             ctx.save();
-            ctx.translate(enemy.x + enemy.width / 2, screenY + enemy.height / 2 + floatOffset);
+            ctx.translate(Math.round(enemy.x + enemy.width / 2), Math.round(screenY + enemy.height / 2 + floatOffset));
             
             // Draw enemy - simple red square
             ctx.fillStyle = "#f56565"; // Red for enemies
