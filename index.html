@@ -100,8 +100,8 @@
       }
       #health-display {
         position: absolute;
-        top: 10px;
-        left: 10px;
+        top: 15px;
+        left: 50px;
         display: flex;
         gap: 5px;
       }
@@ -122,20 +122,16 @@
       }
       #score-display {
         position: absolute;
-        top: 10px;
-        right: 10px;
+        top: 15px;
+        right: 50px;
         font-size: 1.25rem;
         font-weight: 600;
-        background-color: rgba(0, 0, 0, 0.3);
-        padding: 0.25rem 1rem;
-        border-radius: 9999px;
       }
     </style>
   </head>
   <body class="bg-gray-900 text-white">
     <div id="app-container">
       <div class="instructions">
-        <p class="text-lg font-semibold">Tap to jump. Tap again in mid-air to shoot!</p>
         <div id="ammo-display">Ammo: 8/8</div>
       </div>
 
@@ -469,7 +465,7 @@ function warmupIOS() {
 
       const pickupValue = 50; // Score points
       const enemyValue = 100; // Score points
-      const pickupDropChance = 0.3; // 30% chance
+      const pickupDropChance = 1; // 30% chance
       const blockDestructionValue = 15; // Score points for destroying a block
 
       // --- Cached canvas dimensions ---
