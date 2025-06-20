@@ -308,35 +308,44 @@
 
       // --- Audio ---
       let audioContext = null;
-      let audioInitialized = false;
-      
-      // Initialize audio on first user interaction
-      function initAudio() {
-  // 1) Create the context once
+let audioInitialized = false;
+
+function initAudio() {
+  // 1) create or reuse the local audioContext
   if (!audioContext) {
-    console.log("🔊 Creating AudioContext…");
+    console.log("🔊 Creating AudioContext");
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
-  
-  // 2) Always try to resume if suspended
+
+  // 2) always attempt resume if suspended
   if (audioContext.state === 'suspended') {
-    console.log("🔄 AudioContext suspended, resuming…");
+    console.log("🔄 AudioContext suspended—resuming");
     audioContext.resume()
-      .then(() => console.log("✅ AudioContext is now running"))
-      .catch(err => console.error("❌ Resume failed:", err));
+      .then(() => {
+        console.log("✅ AudioContext running");
+        warmupIOS();
+      })
+      .catch(err => console.error("❌ resume() failed:", err));
   }
-  
-  // 3) Only now mark initialized so we don't recreate
+
+  // 3) flag and test tone
   if (!audioInitialized) {
     audioInitialized = true;
     console.log("✅ audioInitialized flag set");
-    
-    // Optional test click
     setTimeout(() => {
-      console.log("▶️ Test tone…");
+      console.log("▶️ playing test tone…");
       createSound('sine', 440, 0.2).play();
     }, 300);
   }
+}
+
+function warmupIOS() {
+  console.log("🎧 Running iOS/Safari warm-up buffer");
+  const buf = audioContext.createBuffer(1,1,22050);
+  const src = audioContext.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioContext.destination);
+  src.start?.(0);
 }
       
       function createSound(type, frequency, duration) {
