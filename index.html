@@ -489,6 +489,14 @@
       let enemies = [];
       let enemyProjectiles = [];
       let pickups = [];
+
+      // Make canvas focusable
+      canvas.tabIndex = 0; 
+      
+      // Function to focus canvas - call this when need to ensure keyboard input works
+      function focusCanvas() {
+        canvas.focus();
+      }
       
       // --- Control State ---
       let isMovingLeft = false;
@@ -808,6 +816,9 @@ function generateNewPlatforms() {
         updateHealthDisplay();
         lastAmmo = player.ammo;
         ammoDisplay.textContent = `Ammo: ${player.ammo}/${maxAmmo}`;
+
+        // Focus the canvas to ensure keyboard events work after reset
+        focusCanvas();
       }
 
       function shoot() {
@@ -1596,8 +1607,6 @@ function generateNewPlatforms() {
       function drawGameOver() {
         // Send score to Farcade SDK and let it handle the game over screen
         window.FarcadeSDK.singlePlayer.actions.gameOver({ score: Math.floor(score) });
-        // Keep the game loop running so it can restart when resetGame is called
-        requestAnimationFrame(gameLoop);
       }
 
       function setupEventListeners() {
@@ -1703,6 +1712,8 @@ function generateNewPlatforms() {
       window.FarcadeSDK.on('play_again', () => {
         console.log("Farcade play_again event received");
         resetGame();
+        // Add a small delay to focus after the UI has updated
+        setTimeout(focusCanvas, 100);
         // Ensure game loop restarts if it was somehow stopped
         if (gameOver === false) {
           requestAnimationFrame(gameLoop);
