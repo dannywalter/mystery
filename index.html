@@ -799,9 +799,15 @@ function generateNewPlatforms() {
         enemyProjectiles = [];
         pickups = [];
         cameraY = 0;
+        enemies = []; // Clear enemies too
         gameOver = false;
         generateInitialPlatforms();
         resetPlayerOnGround();
+        
+        // Ensure UI is updated
+        updateHealthDisplay();
+        lastAmmo = player.ammo;
+        ammoDisplay.textContent = `Ammo: ${player.ammo}/${maxAmmo}`;
       }
 
       function shoot() {
@@ -1136,7 +1142,7 @@ function generateNewPlatforms() {
       function gameLoop() {
         if (gameOver) {
           drawGameOver();
-          return;
+          return; // Still return, but the drawGameOver function will call requestAnimationFrame
         }
         
         // --- Camera Movement ---
@@ -1588,31 +1594,10 @@ function generateNewPlatforms() {
       }
       
       function drawGameOver() {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-        ctx.fillRect(0, 0, canvasW, canvasH);
-        
-        ctx.font = "bold 30px Poppins";
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.fillText("GAME OVER", canvasW / 2, canvasH / 2 - 40);
-        
-        ctx.font = "20px Poppins";
-        ctx.fillText(`Score: ${Math.floor(score)}`, canvasW / 2, canvasH / 2 + 10);
-        ctx.fillText("Tap to restart", canvasW / 2, canvasH / 2 + 50);
-        
-        // Send score to Farcade SDK
+        // Send score to Farcade SDK and let it handle the game over screen
         window.FarcadeSDK.singlePlayer.actions.gameOver({ score: Math.floor(score) });
-        
-        // Handle restart
-        function restartHandler() {
-          canvas.removeEventListener("click", restartHandler);
-          canvas.removeEventListener("touchstart", restartHandler);
-          resetGame();
-          requestAnimationFrame(gameLoop);
-        }
-        
-        canvas.addEventListener("click", restartHandler);
-        canvas.addEventListener("touchstart", restartHandler);
+        // Keep the game loop running so it can restart when resetGame is called
+        requestAnimationFrame(gameLoop);
       }
 
       function setupEventListeners() {
@@ -1657,8 +1642,7 @@ function generateNewPlatforms() {
           jumpBtn,
           () => {
             if (gameOver) {
-              resetGame();
-              return;
+              return; // Don't allow restart from button, Farcade handles it
             }
             
             isJumpButtonPressed = true;
@@ -1679,10 +1663,7 @@ function generateNewPlatforms() {
         // Keyboard controls
         window.addEventListener("keydown", (e) => {
           if (gameOver) {
-            if (e.key === ' ' || e.key === 'Enter') {
-              resetGame();
-              return;
-            }
+            return; // Don't allow restart from keyboard, Farcade handles it
           }
           
           if (e.key === "ArrowLeft" || e.key === "a") isMovingLeft = true;
@@ -1720,7 +1701,12 @@ function generateNewPlatforms() {
       
       // Handle play again requests from Farcade
       window.FarcadeSDK.on('play_again', () => {
+        console.log("Farcade play_again event received");
         resetGame();
+        // Ensure game loop restarts if it was somehow stopped
+        if (gameOver === false) {
+          requestAnimationFrame(gameLoop);
+        }
       });
       
       // Handle mute/unmute requests from Farcade
