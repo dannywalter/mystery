@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>Flip Jump Game</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.min.js"></script>
+
     <style>
       body {
         font-family: "Poppins", sans-serif;
@@ -130,7 +131,6 @@
         border-radius: 9999px;
       }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.min.js"></script>
   </head>
   <body class="bg-gray-900 text-white">
     <div id="app-container">
@@ -832,6 +832,9 @@ function generateNewPlatforms() {
           // Play shoot sound
           shootSound();
           
+          // Add haptic feedback when shooting
+          window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
+          
           // Add visual hover effect (optional particle effect)
           createHoverEffect();
         }
@@ -879,6 +882,7 @@ function generateNewPlatforms() {
               bullets.splice(i, 1);
               enemies.splice(j, 1);
               hitSound();
+              window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
               score += enemyValue;
               bulletHit = true;
               
@@ -910,11 +914,11 @@ function generateNewPlatforms() {
               bullet.x + bullet.width > block.x &&
               bullet.y < block.y + block.height &&
               bullet.y + bullet.height > block.y
-            ) {
-              // Block hit by bullet
+            ) {                // Block hit by bullet
               bullets.splice(i, 1);
               blocks.splice(j, 1);
               hitSound();
+              window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
               score += blockDestructionValue;
               bulletHit = true;
               break;
@@ -964,6 +968,7 @@ function generateNewPlatforms() {
                 // If player wasn't on a platform before, play landing sound
                 if (!player.canJump) {
                   landSound();
+                  window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
                   // Fully reload ammo when landing
                   player.ammo = maxAmmo;
                 }
@@ -992,6 +997,7 @@ function generateNewPlatforms() {
             
             if (player.health <= 0) {
               gameOver = true;
+              window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
               return;
             }
             
@@ -1594,6 +1600,9 @@ function generateNewPlatforms() {
         ctx.fillText(`Score: ${Math.floor(score)}`, canvasW / 2, canvasH / 2 + 10);
         ctx.fillText("Tap to restart", canvasW / 2, canvasH / 2 + 50);
         
+        // Send score to Farcade SDK
+        window.FarcadeSDK.singlePlayer.actions.gameOver({ score: Math.floor(score) });
+        
         // Handle restart
         function restartHandler() {
           canvas.removeEventListener("click", restartHandler);
@@ -1656,6 +1665,7 @@ function generateNewPlatforms() {
             if (player.canJump) {
               player.velocityY = jumpStrength;
               player.canJump = false;
+              window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
             } else {
               shootPermissionGranted = true;
               shoot();
@@ -1704,6 +1714,25 @@ function generateNewPlatforms() {
       resizeCanvas();
       setupEventListeners();
       gameLoop();
+      
+      // Initialize Farcade SDK when game is fully loaded
+      window.FarcadeSDK.singlePlayer.actions.ready();
+      
+      // Handle play again requests from Farcade
+      window.FarcadeSDK.on('play_again', () => {
+        resetGame();
+      });
+      
+      // Handle mute/unmute requests from Farcade
+      window.FarcadeSDK.on('toggle_mute', (data) => {
+        // Set game audio based on data.isMuted
+        audioInitialized = !data.isMuted;
+        if (audioContext && data.isMuted && audioContext.state === 'running') {
+          audioContext.suspend();
+        } else if (audioContext && !data.isMuted && audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+      });
     </script>
   </body>
 </html>
