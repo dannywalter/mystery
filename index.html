@@ -312,19 +312,32 @@
       
       // Initialize audio on first user interaction
       function initAudio() {
-        if (audioInitialized) return;
-        
-        // Create the audio context
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Resume the audio context (needed for Chrome and other browsers)
-        if (audioContext.state === 'suspended') {
-          audioContext.resume();
-        }
-        
-        audioInitialized = true;
-        console.log("Audio initialized!");
-      }
+  // 1) Create the context once
+  if (!audioContext) {
+    console.log("🔊 Creating AudioContext…");
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  
+  // 2) Always try to resume if suspended
+  if (audioContext.state === 'suspended') {
+    console.log("🔄 AudioContext suspended, resuming…");
+    audioContext.resume()
+      .then(() => console.log("✅ AudioContext is now running"))
+      .catch(err => console.error("❌ Resume failed:", err));
+  }
+  
+  // 3) Only now mark initialized so we don't recreate
+  if (!audioInitialized) {
+    audioInitialized = true;
+    console.log("✅ audioInitialized flag set");
+    
+    // Optional test click
+    setTimeout(() => {
+      console.log("▶️ Test tone…");
+      createSound('sine', 440, 0.2).play();
+    }, 300);
+  }
+}
       
       function createSound(type, frequency, duration) {
         // Make sure audio is initialized
@@ -1635,6 +1648,7 @@ function generateNewPlatforms() {
         addBtnListener(
           leftBtn,
           () => {
+            initAudio();
             if (!gameOver) isMovingLeft = true;
           },
           () => (isMovingLeft = false),
@@ -1642,6 +1656,7 @@ function generateNewPlatforms() {
         addBtnListener(
           rightBtn,
           () => {
+            initAudio();
             if (!gameOver) isMovingRight = true;
           },
           () => (isMovingRight = false),
@@ -1653,6 +1668,8 @@ function generateNewPlatforms() {
             if (gameOver) {
               return; // Don't allow restart from button, Farcade handles it
             }
+
+            initAudio();
             
             isJumpButtonPressed = true;
             if (player.canJump) {
@@ -1674,6 +1691,8 @@ function generateNewPlatforms() {
           if (gameOver) {
             return; // Don't allow restart from keyboard, Farcade handles it
           }
+
+          initAudio();
           
           if (e.key === "ArrowLeft" || e.key === "a") isMovingLeft = true;
           if (e.key === "ArrowRight" || e.key === "d") isMovingRight = true;
