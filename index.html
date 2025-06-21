@@ -1,10 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
     <title>Flip Jump Game</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.min.js"></script>
 
     <style>
@@ -114,7 +120,7 @@
         justify-content: center;
         align-items: center;
       }
-      
+
       .health-unit img {
         width: 100%;
         height: 100%;
@@ -207,31 +213,39 @@
       const healthDisplay = document.getElementById("health-display");
       const scoreDisplay = document.getElementById("score-display");
 
-            // --- Image Loading ---
+      // --- Image Loading ---
       const blockImage = new Image();
-      blockImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/block-bNl3WWgsBKqF75lkexi8dOq8RJp9Il.png";
-      
+      blockImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/block-bNl3WWgsBKqF75lkexi8dOq8RJp9Il.png";
+
       // Add the wall images for both sides
       const wallLeftImage = new Image();
-      wallLeftImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/wall-left-6w36WuGgJgYFpThhqqYsPoAIgdpyMI.png";
-      
+      wallLeftImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/wall-left-6w36WuGgJgYFpThhqqYsPoAIgdpyMI.png";
+
       const wallRightImage = new Image();
-      wallRightImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/wall-right-j6ktCizW2uufhrej52PtngwdIuIVzo.png";
-      
+      wallRightImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/wall-right-j6ktCizW2uufhrej52PtngwdIuIVzo.png";
+
       const enemyImage = new Image();
-      enemyImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/alien-2HqllwtnwvnmklNebwwQXxuoMpcGtK.png";
+      enemyImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/alien-2HqllwtnwvnmklNebwwQXxuoMpcGtK.png";
 
       const ufoImage = new Image();
-      ufoImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/ufo-MSubLURp3ZoEjD2tZpMDYfN7XMTsUg.png";
-      
+      ufoImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/ufo-MSubLURp3ZoEjD2tZpMDYfN7XMTsUg.png";
+
       const playerImage = new Image();
-      playerImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/hero-1-nlc5QYIpITwaY1NGM8RChU0xafPC1y.png";
-      
+      playerImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/hero-1-nlc5QYIpITwaY1NGM8RChU0xafPC1y.png";
+
       const heartImage = new Image();
-      heartImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
-      
+      heartImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
+
       const coinSpriteImage = new Image();
-      coinSpriteImage.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/coin-sprite-vmZuxWs9R7cXZ1GmMT2LHOErRmILNZ.png";
+      coinSpriteImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/coin-sprite-vmZuxWs9R7cXZ1GmMT2LHOErRmILNZ.png";
 
       let imageLoaded = false;
       let wallLeftImageLoaded = false;
@@ -241,15 +255,15 @@
       let playerImageLoaded = false;
       let heartImageLoaded = false;
       let coinSpriteLoaded = false;
-      
+
       blockImage.onload = () => {
         imageLoaded = true;
       };
-      
+
       wallLeftImage.onload = () => {
         wallLeftImageLoaded = true;
       };
-      
+
       wallRightImage.onload = () => {
         wallRightImageLoaded = true;
       };
@@ -269,23 +283,27 @@
       heartImage.onload = () => {
         heartImageLoaded = true;
       };
-      
+
       coinSpriteImage.onload = () => {
         coinSpriteLoaded = true;
       };
-      
+
       blockImage.onerror = () => {
         console.warn("Failed to load block image, using fallback rendering");
         imageLoaded = false;
       };
-      
+
       wallLeftImage.onerror = () => {
-        console.warn("Failed to load left wall image, using fallback rendering");
+        console.warn(
+          "Failed to load left wall image, using fallback rendering",
+        );
         wallLeftImageLoaded = false;
       };
-      
+
       wallRightImage.onerror = () => {
-        console.warn("Failed to load right wall image, using fallback rendering");
+        console.warn(
+          "Failed to load right wall image, using fallback rendering",
+        );
         wallRightImageLoaded = false;
       };
 
@@ -298,7 +316,7 @@
         console.warn("Failed to load ufo image, using fallback rendering");
         ufoImageLoaded = false;
       };
-      
+
       playerImage.onerror = () => {
         console.warn("Failed to load player image, using fallback rendering");
         playerImageLoaded = false;
@@ -310,127 +328,148 @@
       };
 
       coinSpriteImage.onerror = () => {
-        console.warn("Failed to load coin sprite image, using fallback rendering");
+        console.warn(
+          "Failed to load coin sprite image, using fallback rendering",
+        );
         coinSpriteLoaded = false;
       };
-      
 
       // --- Audio ---
       let audioContext = null;
-let audioInitialized = false;
+      let audioInitialized = false;
 
-function initAudio() {
-  // 1) create or reuse the local audioContext
-  if (!audioContext) {
-    console.log("🔊 Creating AudioContext");
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
+      function initAudio() {
+        // 1) create or reuse the local audioContext
+        if (!audioContext) {
+          console.log("🔊 Creating AudioContext");
+          audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+        }
 
-  // 2) always attempt resume if suspended
-  if (audioContext.state === 'suspended') {
-    console.log("🔄 AudioContext suspended—resuming");
-    audioContext.resume()
-      .then(() => {
-        console.log("✅ AudioContext running");
-        warmupIOS();
-      })
-      .catch(err => console.error("❌ resume() failed:", err));
-  }
+        // 2) always attempt resume if suspended
+        if (audioContext.state === "suspended") {
+          console.log("🔄 AudioContext suspended—resuming");
+          audioContext
+            .resume()
+            .then(() => {
+              console.log("✅ AudioContext running");
+              warmupIOS();
+            })
+            .catch((err) => console.error("❌ resume() failed:", err));
+        }
 
-  // 3) flag and test tone
-  if (!audioInitialized) {
-    audioInitialized = true;
-    console.log("✅ audioInitialized flag set");
-    setTimeout(() => {
-      console.log("▶️ playing test tone…");
-      createSound('sine', 440, 0.2).play();
-    }, 300);
-  }
-}
+        // 3) flag and test tone
+        if (!audioInitialized) {
+          audioInitialized = true;
+          console.log("✅ audioInitialized flag set");
+          setTimeout(() => {
+            console.log("▶️ playing test tone…");
+            createSound("sine", 440, 0.2).play();
+          }, 300);
+        }
+      }
 
-function warmupIOS() {
-  console.log("🎧 Running iOS/Safari warm-up buffer");
-  const buf = audioContext.createBuffer(1,1,22050);
-  const src = audioContext.createBufferSource();
-  src.buffer = buf;
-  src.connect(audioContext.destination);
-  src.start?.(0);
-}
-      
+      function warmupIOS() {
+        console.log("🎧 Running iOS/Safari warm-up buffer");
+        const buf = audioContext.createBuffer(1, 1, 22050);
+        const src = audioContext.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioContext.destination);
+        src.start?.(0);
+      }
+
       function createSound(type, frequency, duration) {
         // Make sure audio is initialized
         if (!audioInitialized || !audioContext) return { play: () => {} };
-        
+
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
+
         oscillator.type = type;
         oscillator.frequency.value = frequency;
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-        
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioContext.currentTime + duration,
+        );
+
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
         return {
           play: () => {
             oscillator.start();
             oscillator.stop(audioContext.currentTime + duration);
-          }
+          },
         };
       }
-      
+
       const shootSound = () => {
         if (!audioInitialized) return;
-        createSound('square', 220, 0.1).play();
+        createSound("square", 220, 0.1).play();
       };
-      
+
       const landSound = () => {
         if (!audioInitialized) return;
-        createSound('sine', 150, 0.2).play();
+        createSound("sine", 150, 0.2).play();
       };
-      
+
       const hitSound = () => {
         if (!audioInitialized) return;
-        createSound('square', 100, 0.3).play();
+        createSound("square", 100, 0.3).play();
       };
-      
+
       // Updated coin pickup sound - more "bling"-like
       function pickupSound() {
         // Make sure audio is initialized
         if (!audioInitialized || !audioContext) return;
-        
+
         // First high note (initial "b")
         const coinOsc1 = audioContext.createOscillator();
-        coinOsc1.type = 'sine';
+        coinOsc1.type = "sine";
         coinOsc1.frequency.value = 880; // Higher pitched note (A5)
-        
+
         // Second sustain note (the "ling")
         const coinOsc2 = audioContext.createOscillator();
-        coinOsc2.type = 'triangle';
+        coinOsc2.type = "triangle";
         coinOsc2.frequency.value = 1318.5; // E6 note
-        
+
         // Volume control for both oscillators
         const gainNode1 = audioContext.createGain();
         const gainNode2 = audioContext.createGain();
-        
+
         // Set volume envelope for first note (quick attack, quick decay)
         gainNode1.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode1.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
-        gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        
+        gainNode1.gain.linearRampToValueAtTime(
+          0.5,
+          audioContext.currentTime + 0.01,
+        );
+        gainNode1.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioContext.currentTime + 0.1,
+        );
+
         // Set volume envelope for second note (delayed start, longer decay)
         gainNode2.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode2.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05); // Delay start
-        gainNode2.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.06); // Quick attack
-        gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3); // Longer decay
-        
+        gainNode2.gain.linearRampToValueAtTime(
+          0,
+          audioContext.currentTime + 0.05,
+        ); // Delay start
+        gainNode2.gain.linearRampToValueAtTime(
+          0.4,
+          audioContext.currentTime + 0.06,
+        ); // Quick attack
+        gainNode2.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioContext.currentTime + 0.3,
+        ); // Longer decay
+
         // Connect audio nodes
         coinOsc1.connect(gainNode1);
         coinOsc2.connect(gainNode2);
         gainNode1.connect(audioContext.destination);
         gainNode2.connect(audioContext.destination);
-        
+
         // Start and stop oscillators
         coinOsc1.start();
         coinOsc2.start();
@@ -438,12 +477,12 @@ function warmupIOS() {
         coinOsc2.stop(audioContext.currentTime + 0.3);
       }
 
-            // --- Game Configuration ---
+      // --- Game Configuration ---
       const normalGravity = 0.55; // Reduced from 0.6 to make jumps feel lighter
       const reducedGravity = 0.1; // Reduced from 0.1 for smoother floating
       const jumpStrength = -13; // Stronger initial jump (was -13)
       const constantFallSpeed = 15; // Reduced from 15 for less aggressive falling
-      const maxFallingSpeed = 15;   // Reduced from 15 to match constantFallSpeed
+      const maxFallingSpeed = 15; // Reduced from 15 to match constantFallSpeed
       const playerSize = 30;
       const playerSpeed = 7;
       const playerColor = "#4299e1";
@@ -454,10 +493,10 @@ function warmupIOS() {
       const bulletLifetime = 500; // New: 1.5 seconds lifetime for bullets
       const screenShakeDuration = 10; // New: milliseconds of screen shake
       const screenShakeIntensity = 5; // New: pixels of screen shake
-      
+
       // Add wall configuration
       const wallWidth = Math.floor(playerSize / 2); // Half player size for wall width
-      
+
       // Add these new properties
       let screenShake = 0;
       let screenShakeX = 0;
@@ -486,7 +525,7 @@ function warmupIOS() {
       let canvasH = 0;
       let dpr = window.devicePixelRatio || 1;
       let groundY = 0;
-      
+
       // --- Game State ---
       let gameStarted = false;
       let gameOver = false;
@@ -522,13 +561,13 @@ function warmupIOS() {
       let pickups = [];
 
       // Make canvas focusable
-      canvas.tabIndex = 0; 
-      
+      canvas.tabIndex = 0;
+
       // Function to focus canvas - call this when need to ensure keyboard input works
       function focusCanvas() {
         canvas.focus();
       }
-      
+
       // --- Control State ---
       let isMovingLeft = false;
       let isMovingRight = false;
@@ -552,22 +591,22 @@ function warmupIOS() {
         path.closePath();
         return path;
       })();
-      
+
       const enemyPath = (() => {
         const path = new Path2D();
         const size = enemySize;
         const halfSize = size / 2;
-        
+
         // Draw a simple square shape
         path.rect(-halfSize, -halfSize, size, size);
-        
+
         return path;
       })();
 
       // --- Platform Generation ---
       function createPlatformBlocks(x, y, cols, rows) {
         const platformBlocks = [];
-        
+
         for (let row = 0; row < rows; row++) {
           for (let col = 0; col < cols; col++) {
             blocks.push({
@@ -575,53 +614,55 @@ function warmupIOS() {
               y: y + row * blockSize,
               width: blockSize,
               height: blockSize,
-              type: 'normal'
+              type: "normal",
             });
           }
         }
-        
+
         return platformBlocks;
       }
-      
+
       function generatePlatformPattern(x, y) {
         // Choose a platform pattern
         const patternType = Math.random();
-        
+
         // Calculate available space to prevent overflow
         const availableWidth = Math.floor((canvasW - x) / blockSize);
-        
+
         // Create different platform patterns based on probability
         if (patternType < 0.4) {
           // Simple horizontal platform (1x3, 1x4, etc.)
-          const width = Math.min(Math.floor(Math.random() * 4) + 2, availableWidth); // FIXED: Cap to available space
+          const width = Math.min(
+            Math.floor(Math.random() * 4) + 2,
+            availableWidth,
+          ); // FIXED: Cap to available space
           createPlatformBlocks(x, y, width, 1);
           return { width: width * blockSize, height: blockSize };
-        } 
-        else if (patternType < 0.65) {
+        } else if (patternType < 0.65) {
           // L-shape platform
-          const width = Math.min(Math.floor(Math.random() * 2) + 2, availableWidth); // FIXED: Cap to available space
+          const width = Math.min(
+            Math.floor(Math.random() * 2) + 2,
+            availableWidth,
+          ); // FIXED: Cap to available space
           const height = 2; // 2 blocks tall (enough for player to jump through)
-          
+
           // Horizontal part
           createPlatformBlocks(x, y, width, 1);
-          
+
           // Vertical part
           createPlatformBlocks(x, y + blockSize, 1, height - 1);
-          
+
           return { width: width * blockSize, height: height * blockSize };
-        }
-        else if (patternType < 0.8) {
+        } else if (patternType < 0.8) {
           // Small square platform (2x2)
           const width = Math.min(2, availableWidth); // FIXED: Cap to available space
           createPlatformBlocks(x, y, width, 2);
           return { width: width * blockSize, height: 2 * blockSize };
-        }
-        else if (patternType < 0.9) {
+        } else if (patternType < 0.9) {
           // Single block (allows the player to create path by destroying adjacent blocks)
           createPlatformBlocks(x, y, 1, 1);
           return { width: blockSize, height: blockSize };
-        }
-        else {
+        } else {
           // Wide platform with a gap (2-1-2 pattern) - FIXED: Only if enough space
           if (availableWidth >= 5) {
             createPlatformBlocks(x, y, 2, 1);
@@ -635,182 +676,213 @@ function warmupIOS() {
           }
         }
       }
-      
-            // In the generateInitialPlatforms function, increase the number of initial platforms
-function generateInitialPlatforms() {
-  blocks = [];
-  platforms = [];
-  
-  // Add ground platform (full width but account for walls)
-  const groundY = canvasH - initialGroundHeight;
-  const groundBlockCount = Math.floor((canvasW - (wallWidth * 2)) / blockSize);
-  createPlatformBlocks(wallWidth, groundY, groundBlockCount, 1);
-  
-  // Generate more platforms below ground
-  const numInitialPlatforms = 25; // Increased from 15 to 25
-  let lastY = groundY + 200; // Start below the ground
-  
-  for (let i = 0; i < numInitialPlatforms; i++) {
-    // Generate a random x position for the platform - account for walls
-    const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
-    const x = Math.floor(Math.random() * (maxX - wallWidth) / blockSize) * blockSize + wallWidth;
-    const y = lastY;
-    
-    // Generate a platform pattern at this position
-    const platformInfo = generatePlatformPattern(x, y);
-    
-    // Maybe spawn an enemy on this platform (50% chance, increased from 30%)
-    if (Math.random() < 0.5 && i > 2) {
-      // Spawn 1-2 enemies on this platform
-      const enemyCount = Math.random() < 0.3 ? 2 : 1; // 30% chance for 2 enemies
-      
-      for (let j = 0; j < enemyCount; j++) {
-        // Space them out if there's more than one
-        const offset = j * (platformInfo.width / Math.max(enemyCount, 1));
-        const enemyX = x + offset + Math.random() * Math.max(0, platformInfo.width/enemyCount - enemySize);
-        const enemyY = y - enemySize;
-        
-        enemies.push({
-          type: 'alien',
-          x: enemyX,
-          y: enemyY,
-          width: enemySize,
-          height: enemySize,
-          velocityX: 0,
-          velocityY: 0,
-          speed: 0.7 + Math.random() * 0.6, // Random speed between 0.7-1.3
-          lastMoveTime: 0 // Track time for making movement decisions
-        });
-      }
-    }
 
-    // Additional chance to spawn a ufo that moves horizontally
-    if (Math.random() < 0.2) {
-      const rangeLeft = x;
-      const rangeRight = x + Math.max(platformInfo.width - enemySize, 0);
-      const enemyX = rangeLeft + Math.random() * (rangeRight - rangeLeft);
-      const enemyY = y - enemySize * 1.2;
-      enemies.push({
-        type: 'ufo',
-        x: enemyX,
-        y: enemyY,
-        width: enemySize,
-        height: enemySize,
-        direction: Math.random() < 0.5 ? -1 : 1,
-        speed: 1,
-        rangeLeft,
-        rangeRight
-      });
-    }
-    
-    // Random vertical distance between platforms (with occasional bigger gaps)
-    // Decreased gaps to increase platform density
-    const gap = Math.random() < 0.2 ? 
-                Math.random() * 300 + 150 : // Decreased from 350 to 300
-                Math.random() * 120 + 50;   // Decreased from 150 to 120
-    lastY += gap; // Move downward for next platform
-  }
-}
+      // In the generateInitialPlatforms function, increase the number of initial platforms
+      function generateInitialPlatforms() {
+        blocks = [];
+        platforms = [];
 
-// In the generateNewPlatforms function, increase the number of platforms and enemy spawn rate
-function generateNewPlatforms() {
-  // If there are no blocks (first run) or blocks are getting low, generate more
-  if (blocks.length === 0 || 
-      blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity) - cameraY < canvasH * 1.5) {
-    
-    // Find the bottom-most block
-    const bottomY = blocks.reduce((bottom, blk) => blk.y > bottom ? blk.y : bottom, -Infinity);
-    
-    let newPlatformY = bottomY + Math.random() * 200 + 100;
-    
-    // Generate more platforms (increased from 8 to 12)
-    for (let i = 0; i < 12; i++) {
-      // Decreased chance of creating shafts (from 20% to 15%)
-      if (Math.random() < 0.15) {
-        newPlatformY += Math.random() * 300 + 200;
-        continue;
-      }
-      
-      // Generate a random x position for the platform - account for walls
-      const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
-      const x = Math.floor(Math.random() * (maxX - wallWidth) / blockSize) * blockSize + wallWidth;
-      const y = newPlatformY;
-      
-      // Generate a platform pattern at this position
-      const platformInfo = generatePlatformPattern(x, y);
-      
-      // Increased enemy spawn rate from 30% to 50%
-      if (Math.random() < 0.5) {
-        // 30% chance to spawn multiple enemies on larger platforms
-        const enemyCount = (platformInfo.width > blockSize * 3 && Math.random() < 0.3) ?
-                          Math.floor(Math.random() * 2) + 2 : 1; // 1-3 enemies
-        
-        for (let j = 0; j < enemyCount; j++) {
-          // Space them out if there's more than one
-          const platformWidth = Math.max(platformInfo.width, enemySize * 2);
-          const section = platformWidth / enemyCount;
-          const enemyX = x + (j * section) + Math.random() * Math.max(0, section - enemySize);
-          const enemyY = y - enemySize;
-          
-          enemies.push({
-            type: 'alien',
-            x: enemyX,
-            y: enemyY,
-            width: enemySize,
-            height: enemySize,
-            velocityX: 0,
-            velocityY: 0,
-            speed: 0.7 + Math.random() * 0.8, // Increased max speed from 0.6 to 0.8
-            lastMoveTime: 0
-          });
+        // Add ground platform (full width but account for walls)
+        const groundY = canvasH - initialGroundHeight;
+        const groundBlockCount = Math.floor(
+          (canvasW - wallWidth * 2) / blockSize,
+        );
+        createPlatformBlocks(wallWidth, groundY, groundBlockCount, 1);
+
+        // Generate more platforms below ground
+        const numInitialPlatforms = 25; // Increased from 15 to 25
+        let lastY = groundY + 200; // Start below the ground
+
+        for (let i = 0; i < numInitialPlatforms; i++) {
+          // Generate a random x position for the platform - account for walls
+          const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
+          const x =
+            Math.floor((Math.random() * (maxX - wallWidth)) / blockSize) *
+              blockSize +
+            wallWidth;
+          const y = lastY;
+
+          // Generate a platform pattern at this position
+          const platformInfo = generatePlatformPattern(x, y);
+
+          // Maybe spawn an enemy on this platform (50% chance, increased from 30%)
+          if (Math.random() < 0.5 && i > 2) {
+            // Spawn 1-2 enemies on this platform
+            const enemyCount = Math.random() < 0.3 ? 2 : 1; // 30% chance for 2 enemies
+
+            for (let j = 0; j < enemyCount; j++) {
+              // Space them out if there's more than one
+              const offset = j * (platformInfo.width / Math.max(enemyCount, 1));
+              const enemyX =
+                x +
+                offset +
+                Math.random() *
+                  Math.max(0, platformInfo.width / enemyCount - enemySize);
+              const enemyY = y - enemySize;
+
+              enemies.push({
+                type: "alien",
+                x: enemyX,
+                y: enemyY,
+                width: enemySize,
+                height: enemySize,
+                velocityX: 0,
+                velocityY: 0,
+                speed: 0.7 + Math.random() * 0.6, // Random speed between 0.7-1.3
+                lastMoveTime: 0, // Track time for making movement decisions
+              });
+            }
+          }
+
+          // Additional chance to spawn a ufo that moves horizontally
+          if (Math.random() < 0.2) {
+            const rangeLeft = x;
+            const rangeRight = x + Math.max(platformInfo.width - enemySize, 0);
+            const enemyX = rangeLeft + Math.random() * (rangeRight - rangeLeft);
+            const enemyY = y - enemySize * 1.2;
+            enemies.push({
+              type: "ufo",
+              x: enemyX,
+              y: enemyY,
+              width: enemySize,
+              height: enemySize,
+              direction: Math.random() < 0.5 ? -1 : 1,
+              speed: 1,
+              rangeLeft,
+              rangeRight,
+            });
+          }
+
+          // Random vertical distance between platforms (with occasional bigger gaps)
+          // Decreased gaps to increase platform density
+          const gap =
+            Math.random() < 0.2
+              ? Math.random() * 300 + 150 // Decreased from 350 to 300
+              : Math.random() * 120 + 50; // Decreased from 150 to 120
+          lastY += gap; // Move downward for next platform
         }
       }
 
-      // Additional chance to spawn a ufo that moves horizontally
-      if (Math.random() < 0.2) {
-        const rangeLeft = x;
-        const rangeRight = x + Math.max(platformInfo.width - enemySize, 0);
-        const enemyX = rangeLeft + Math.random() * (rangeRight - rangeLeft);
-        const enemyY = y - enemySize * 1.2;
-        enemies.push({
-          type: 'ufo',
-          x: enemyX,
-          y: enemyY,
-          width: enemySize,
-          height: enemySize,
-          direction: Math.random() < 0.5 ? -1 : 1,
-          speed: 1,
-          rangeLeft,
-          rangeRight
+      // In the generateNewPlatforms function, increase the number of platforms and enemy spawn rate
+      function generateNewPlatforms() {
+        // If there are no blocks (first run) or blocks are getting low, generate more
+        if (
+          blocks.length === 0 ||
+          blocks.reduce(
+            (bottom, blk) => (blk.y > bottom ? blk.y : bottom),
+            -Infinity,
+          ) -
+            cameraY <
+            canvasH * 1.5
+        ) {
+          // Find the bottom-most block
+          const bottomY = blocks.reduce(
+            (bottom, blk) => (blk.y > bottom ? blk.y : bottom),
+            -Infinity,
+          );
+
+          let newPlatformY = bottomY + Math.random() * 200 + 100;
+
+          // Generate more platforms (increased from 8 to 12)
+          for (let i = 0; i < 12; i++) {
+            // Decreased chance of creating shafts (from 20% to 15%)
+            if (Math.random() < 0.15) {
+              newPlatformY += Math.random() * 300 + 200;
+              continue;
+            }
+
+            // Generate a random x position for the platform - account for walls
+            const maxX = canvasW - blockSize - wallWidth; // Ensure at least one block fits
+            const x =
+              Math.floor((Math.random() * (maxX - wallWidth)) / blockSize) *
+                blockSize +
+              wallWidth;
+            const y = newPlatformY;
+
+            // Generate a platform pattern at this position
+            const platformInfo = generatePlatformPattern(x, y);
+
+            // Increased enemy spawn rate from 30% to 50%
+            if (Math.random() < 0.5) {
+              // 30% chance to spawn multiple enemies on larger platforms
+              const enemyCount =
+                platformInfo.width > blockSize * 3 && Math.random() < 0.3
+                  ? Math.floor(Math.random() * 2) + 2
+                  : 1; // 1-3 enemies
+
+              for (let j = 0; j < enemyCount; j++) {
+                // Space them out if there's more than one
+                const platformWidth = Math.max(
+                  platformInfo.width,
+                  enemySize * 2,
+                );
+                const section = platformWidth / enemyCount;
+                const enemyX =
+                  x +
+                  j * section +
+                  Math.random() * Math.max(0, section - enemySize);
+                const enemyY = y - enemySize;
+
+                enemies.push({
+                  type: "alien",
+                  x: enemyX,
+                  y: enemyY,
+                  width: enemySize,
+                  height: enemySize,
+                  velocityX: 0,
+                  velocityY: 0,
+                  speed: 0.7 + Math.random() * 0.8, // Increased max speed from 0.6 to 0.8
+                  lastMoveTime: 0,
+                });
+              }
+            }
+
+            // Additional chance to spawn a ufo that moves horizontally
+            if (Math.random() < 0.2) {
+              const rangeLeft = x;
+              const rangeRight = x + Math.max(platformInfo.width - enemySize, 0);
+              const enemyX = rangeLeft + Math.random() * (rangeRight - rangeLeft);
+              const enemyY = y - enemySize * 1.2;
+              enemies.push({
+                type: "ufo",
+                x: enemyX,
+                y: enemyY,
+                width: enemySize,
+                height: enemySize,
+                direction: Math.random() < 0.5 ? -1 : 1,
+                speed: 1,
+                rangeLeft,
+                rangeRight,
+              });
+            }
+
+            // Random vertical distance between platforms (decreased distances for more density)
+            const gap =
+              Math.random() < 0.2
+                ? Math.random() * 350 + 180 // Decreased from 400+200 to 350+180
+                : Math.random() * 180 + 80; // Decreased from 200+100 to 180+80
+            newPlatformY += gap; // Move downward for next platform
+          }
+        }
+
+        // Rest of the function remains the same...
+        // Clean up objects that are far from the camera (no longer visible)
+        blocks = blocks.filter((b) => {
+          const screenY = b.y - cameraY;
+          return screenY > -canvasH * 2 && screenY < canvasH * 2;
+        });
+
+        enemies = enemies.filter((e) => {
+          const screenY = e.y - cameraY;
+          return screenY > -canvasH * 2 && screenY < canvasH * 2;
+        });
+
+        // Also clean up pickups that are off-screen
+        pickups = pickups.filter((p) => {
+          const screenY = p.y - cameraY;
+          return screenY > -canvasH * 2 && screenY < canvasH * 2;
         });
       }
-      
-      // Random vertical distance between platforms (decreased distances for more density)
-      const gap = Math.random() < 0.2 ? 
-                  Math.random() * 350 + 180 : // Decreased from 400+200 to 350+180
-                  Math.random() * 180 + 80;   // Decreased from 200+100 to 180+80
-      newPlatformY += gap; // Move downward for next platform
-    }
-  }
-  
-  // Rest of the function remains the same...
-  // Clean up objects that are far from the camera (no longer visible)
-  blocks = blocks.filter(b => {
-    const screenY = b.y - cameraY;
-    return screenY > -canvasH * 2 && screenY < canvasH * 2;
-  });
-  
-  enemies = enemies.filter(e => {
-    const screenY = e.y - cameraY;
-    return screenY > -canvasH * 2 && screenY < canvasH * 2;
-  });
-  
-  // Also clean up pickups that are off-screen
-  pickups = pickups.filter(p => {
-    const screenY = p.y - cameraY;
-    return screenY > -canvasH * 2 && screenY < canvasH * 2;
-  });
-}
 
       // --- Resize & initialize ---
       function resizeCanvas() {
@@ -834,24 +906,25 @@ function generateNewPlatforms() {
       }
 
       function initializeHealthDisplay() {
-        healthDisplay.innerHTML = '';
+        healthDisplay.innerHTML = "";
         for (let i = 0; i < player.health; i++) {
-          const healthUnit = document.createElement('div');
-          healthUnit.className = 'health-unit';
-          
+          const healthUnit = document.createElement("div");
+          healthUnit.className = "health-unit";
+
           // Create an image element
-          const heartImg = document.createElement('img');
-          heartImg.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
+          const heartImg = document.createElement("img");
+          heartImg.src =
+            "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
           heartImg.style.width = "100%";
           heartImg.style.height = "100%";
-          
+
           // Add error handler for fallback
-          heartImg.onerror = function() {
+          heartImg.onerror = function () {
             // If image fails to load, show red square instead
             this.style.display = "none";
             healthUnit.style.backgroundColor = "#f56565"; // Red background
           };
-          
+
           healthUnit.appendChild(heartImg);
           healthDisplay.appendChild(healthUnit);
         }
@@ -866,7 +939,7 @@ function generateNewPlatforms() {
         lastAmmo = player.ammo;
         ammoDisplay.textContent = `Ammo: ${player.ammo}/${maxAmmo}`;
       }
-      
+
       function resetGame() {
         player.health = initialHealth;
         initializeHealthDisplay();
@@ -882,7 +955,7 @@ function generateNewPlatforms() {
         gameOver = false;
         generateInitialPlatforms();
         resetPlayerOnGround();
-        
+
         // Ensure UI is updated
         updateHealthDisplay();
         lastAmmo = player.ammo;
@@ -897,13 +970,13 @@ function generateNewPlatforms() {
         if (player.ammo > 0 && now - lastShotTime > shootCooldown) {
           player.ammo--;
           lastShotTime = now;
-          
+
           // Apply upward force to counteract gravity if falling
           if (!player.canJump && player.velocityY > 0) {
             // Reset vertical velocity to hover
             player.velocityY = 1; // Slight downward drift
           }
-          
+
           // Create bullet going downward with timestamp for lifetime tracking
           bullets.push({
             x: player.x + player.width / 2 - bulletSize / 2,
@@ -913,21 +986,21 @@ function generateNewPlatforms() {
             velocityY: bulletSpeed,
             createdAt: now,
           });
-          
+
           // Add screen shake effect
           screenShake = screenShakeDuration;
-          
+
           // Play shoot sound
           shootSound();
-          
+
           // Add haptic feedback when shooting
           window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
-          
+
           // Add visual hover effect (optional particle effect)
           createHoverEffect();
         }
       }
-      
+
       // New function to create a visual hover effect
       function createHoverEffect() {
         // Create small upward particles for visual feedback
@@ -935,7 +1008,7 @@ function generateNewPlatforms() {
           const particleSize = Math.random() * 3 + 2;
           const particleSpeed = Math.random() * 2 + 1;
           const particleX = player.x + Math.random() * player.width;
-          
+
           bullets.push({
             x: particleX,
             y: player.y + player.height,
@@ -944,22 +1017,22 @@ function generateNewPlatforms() {
             velocityY: -particleSpeed, // Upward movement
             isEffect: true, // Mark as visual effect
             createdAt: Date.now(),
-            lifetime: 300 // Short lifetime for effect particles
+            lifetime: 300, // Short lifetime for effect particles
           });
         }
       }
-      
+
       function checkBulletCollisions() {
         // Check player bullets against enemies and blocks
         for (let i = bullets.length - 1; i >= 0; i--) {
           const bullet = bullets[i];
-          
+
           let bulletHit = false;
-          
+
           // Check collisions with enemies
           for (let j = enemies.length - 1; j >= 0; j--) {
             const enemy = enemies[j];
-            
+
             if (
               bullet.x < enemy.x + enemy.width &&
               bullet.x + bullet.width > enemy.x &&
@@ -973,7 +1046,7 @@ function generateNewPlatforms() {
               window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
               score += enemyValue;
               bulletHit = true;
-              
+
               // Chance to drop a pickup
               if (Math.random() < pickupDropChance) {
                 pickups.push({
@@ -981,28 +1054,29 @@ function generateNewPlatforms() {
                   y: enemy.y + enemy.height / 2 - pickupSize / 2,
                   width: pickupSize,
                   height: pickupSize,
-                  type: 'point',
+                  type: "point",
                   frameIndex: 0, // Starting frame for animation
-                  frameCounter: Math.floor(Math.random() * coinFrameCount) // Random start point for animation
+                  frameCounter: Math.floor(Math.random() * coinFrameCount), // Random start point for animation
                 });
               }
-              
+
               break;
             }
           }
-          
+
           if (bulletHit) continue;
-          
+
           // Check collisions with blocks
           for (let j = blocks.length - 1; j >= 0; j--) {
             const block = blocks[j];
-            
+
             if (
               bullet.x < block.x + block.width &&
               bullet.x + bullet.width > block.x &&
               bullet.y < block.y + block.height &&
               bullet.y + bullet.height > block.y
-            ) {                // Block hit by bullet
+            ) {
+              // Block hit by bullet
               bullets.splice(i, 1);
               blocks.splice(j, 1);
               hitSound();
@@ -1012,38 +1086,43 @@ function generateNewPlatforms() {
               break;
             }
           }
-          
+
           if (bulletHit) continue;
         }
       }
-      
+
       function checkPlayerCollisions() {
         // Block collisions
         let isOnPlatform = false;
-        
+
         // Group blocks by their Y coordinate for more efficient collision detection
         const blockRows = {};
-        blocks.forEach(block => {
+        blocks.forEach((block) => {
           const rowKey = Math.floor(block.y / blockSize);
           if (!blockRows[rowKey]) blockRows[rowKey] = [];
           blockRows[rowKey].push(block);
         });
-        
+
         // Calculate the player's row
-        const playerBottomRow = Math.floor((player.y + player.height) / blockSize);
-        const checkRows = Math.min(2 + Math.floor(Math.abs(player.velocityY) / 10), 4); // Check more rows for fast-falling
-        
+        const playerBottomRow = Math.floor(
+          (player.y + player.height) / blockSize,
+        );
+        const checkRows = Math.min(
+          2 + Math.floor(Math.abs(player.velocityY) / 10),
+          4,
+        ); // Check more rows for fast-falling
+
         // Check collision with blocks in multiple rows below the player
         for (let rowOffset = 0; rowOffset <= checkRows; rowOffset++) {
           const blockRow = blockRows[playerBottomRow + rowOffset];
           if (!blockRow) continue;
-          
+
           for (const block of blockRow) {
             // Check if player is on or landing on a block
             if (
               // Player's bottom edge is within the block's collision zone - increased tolerance
               player.y + player.height >= block.y - 8 &&
-              player.y + player.height <= block.y + block.height/2 &&
+              player.y + player.height <= block.y + block.height / 2 &&
               // Significantly more lenient horizontal overlap requirement (20% overlap)
               player.x + player.width * 0.8 > block.x &&
               player.x + player.width * 0.2 < block.x + block.width
@@ -1052,7 +1131,7 @@ function generateNewPlatforms() {
               if (player.velocityY >= 0) {
                 player.y = block.y - player.height;
                 player.velocityY = 0;
-                
+
                 // If player wasn't on a platform before, play landing sound
                 if (!player.canJump) {
                   landSound();
@@ -1060,7 +1139,7 @@ function generateNewPlatforms() {
                   // Fully reload ammo when landing
                   player.ammo = maxAmmo;
                 }
-                
+
                 player.canJump = true;
                 shootPermissionGranted = false;
                 isOnPlatform = true;
@@ -1068,27 +1147,27 @@ function generateNewPlatforms() {
               }
             }
           }
-          
+
           if (isOnPlatform) break;
         }
-        
+
         // If not on any platform, the player is falling
         if (!isOnPlatform) {
           player.canJump = false;
-          
+
           // Check if player fell off screen
           if (player.y - cameraY > canvasH + 100) {
             // Player fell off screen, lose health
             player.health--;
             updateHealthDisplay();
             hitSound();
-            
+
             if (player.health <= 0) {
               gameOver = true;
               window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
               return;
             }
-            
+
             // Reset player position to be visible on screen
             player.y = cameraY + 100;
             player.velocityY = 0;
@@ -1096,11 +1175,11 @@ function generateNewPlatforms() {
             player.ammo = maxAmmo;
           }
         }
-        
+
         // Enemy collisions - player jumps on enemies
         for (let i = enemies.length - 1; i >= 0; i--) {
           const enemy = enemies[i];
-          
+
           if (
             player.x < enemy.x + enemy.width &&
             player.x + player.width > enemy.x &&
@@ -1115,10 +1194,10 @@ function generateNewPlatforms() {
             enemies.splice(i, 1);
             hitSound();
             score += enemyValue;
-            
+
             // Bounce the player
             player.velocityY = jumpStrength / 1.5;
-            
+
             // Chance to drop a pickup
             if (Math.random() < pickupDropChance) {
               pickups.push({
@@ -1126,15 +1205,14 @@ function generateNewPlatforms() {
                 y: enemy.y + enemy.height / 2 - pickupSize / 2,
                 width: pickupSize,
                 height: pickupSize,
-                type: 'point',
+                type: "point",
                 frameIndex: 0, // Starting frame for animation
-                frameCounter: Math.floor(Math.random() * coinFrameCount) // Random start point for animation
+                frameCounter: Math.floor(Math.random() * coinFrameCount), // Random start point for animation
               });
             }
-            
           }
         }
-        
+
         /* // Enemy projectile collisions with player
         if (player.invulnerable <= 0) {
           for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
@@ -1161,11 +1239,11 @@ function generateNewPlatforms() {
             }
           }
         } */
-        
+
         // Pickup collisions
         for (let i = pickups.length - 1; i >= 0; i--) {
           const pickup = pickups[i];
-          
+
           if (
             player.x < pickup.x + pickup.width &&
             player.x + player.width > pickup.x &&
@@ -1175,8 +1253,8 @@ function generateNewPlatforms() {
             // Player collected pickup
             pickups.splice(i, 1);
             pickupSound();
-            
-            if (pickup.type === 'point') {
+
+            if (pickup.type === "point") {
               score += pickupValue;
             }
           }
@@ -1185,24 +1263,25 @@ function generateNewPlatforms() {
 
       function updateHealthDisplay() {
         if (player.health !== lastHealth) {
-          healthDisplay.innerHTML = '';
+          healthDisplay.innerHTML = "";
           for (let i = 0; i < player.health; i++) {
-            const healthUnit = document.createElement('div');
-            healthUnit.className = 'health-unit';
-            
+            const healthUnit = document.createElement("div");
+            healthUnit.className = "health-unit";
+
             // Create an image element
-            const heartImg = document.createElement('img');
-            heartImg.src = "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
+            const heartImg = document.createElement("img");
+            heartImg.src =
+              "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/heart-eQKNNOh4kHQCtEI8jU91RRuTU4UGgn.png";
             heartImg.style.width = "100%";
             heartImg.style.height = "100%";
-            
+
             // Add error handler for fallback
-            heartImg.onerror = function() {
+            heartImg.onerror = function () {
               // If image fails to load, show red square instead
               this.style.display = "none";
               healthUnit.style.backgroundColor = "#f56565"; // Red background
             };
-            
+
             healthUnit.appendChild(heartImg);
             healthDisplay.appendChild(healthUnit);
           }
@@ -1215,9 +1294,9 @@ function generateNewPlatforms() {
           ammoDisplay.textContent = `Ammo: ${player.ammo}/${maxAmmo}`;
           lastAmmo = player.ammo;
         }
-        
+
         scoreDisplay.textContent = `Score: ${Math.floor(score)}`;
-        
+
         updateHealthDisplay();
       }
 
@@ -1226,23 +1305,23 @@ function generateNewPlatforms() {
           drawGameOver();
           return; // Still return, but the drawGameOver function will call requestAnimationFrame
         }
-        
+
         // --- Camera Movement ---
         // Always center the camera on the player
         const targetCameraY = player.y - canvasH / 2;
-        
+
         // Use immediate camera positioning for smooth tracking
         cameraY = targetCameraY;
-        
+
         // Add to score based on depth traveled only when moving down
         if (cameraY > depthTraveled) {
           score += (cameraY - depthTraveled) * 0.1;
           depthTraveled = cameraY;
         }
-        
+
         // Generate new platforms as needed
         generateNewPlatforms();
-        
+
         // --- Movement ---
         player.velocityX = 0;
         if (isMovingLeft) player.velocityX = -playerSpeed;
@@ -1250,14 +1329,17 @@ function generateNewPlatforms() {
         player.x += player.velocityX;
 
         // --- Linear falling & floating ---
-        const isFloating = shootPermissionGranted && isJumpButtonPressed && player.ammo > 0 && !player.canJump;
-        
+        const isFloating =
+          shootPermissionGranted &&
+          isJumpButtonPressed &&
+          player.ammo > 0 &&
+          !player.canJump;
+
         if (isFloating) {
           // Hover in place while shooting - almost zero gravity
           player.velocityY = 1; // Slight downward drift for visual effect
           shoot();
-        }
-        else if (!player.canJump) {
+        } else if (!player.canJump) {
           // Create a more natural jump arc with variable gravity
           if (player.velocityY >= 0) {
             // Going down - use constant fall speed but ramp up to it more gradually
@@ -1282,15 +1364,15 @@ function generateNewPlatforms() {
           // No vertical movement when on platform
           player.velocityY = 0;
         }
-        
+
         // Cap falling speed to prevent getting too fast
         if (player.velocityY > maxFallingSpeed) {
           player.velocityY = maxFallingSpeed;
         }
-        
+
         // Apply vertical movement
         player.y += player.velocityY;
-        
+
         // Call collision detection *after* movement
         checkPlayerCollisions();
 
@@ -1299,24 +1381,25 @@ function generateNewPlatforms() {
 
         // --- Horizontal bounds --- (adjust for walls)
         if (player.x < wallWidth) player.x = wallWidth;
-        if (player.x + player.width > canvasW - wallWidth) player.x = canvasW - wallWidth - player.width;
-        
+        if (player.x + player.width > canvasW - wallWidth)
+          player.x = canvasW - wallWidth - player.width;
+
         // --- Update enemies ---
         updateEnemies();
-        
+
         // --- Check Bullet Collisions ---
         checkBulletCollisions();
         // Note: Player collisions are now checked right after player movement
-        
+
         // --- Draw Everything ---
         // Explicitly clear the canvas completely before drawing the background
         // Clear slightly larger area to prevent edge artifacts
         ctx.clearRect(-10, -10, canvasW + 20, canvasH + 20);
-        
+
         // Draw the background color
         ctx.fillStyle = "#2d3748";
         ctx.fillRect(0, 0, canvasW, canvasH);
-        
+
         // Apply screen shake if active
         ctx.save(); // Always save the context state, regardless of screen shake
         if (screenShake > 0) {
@@ -1325,7 +1408,7 @@ function generateNewPlatforms() {
           screenShakeY = (Math.random() - 0.5) * 2 * screenShakeIntensity;
           ctx.translate(screenShakeX, screenShakeY);
         }
-        
+
         // Draw left wall using the provided image
         // The image repeats vertically as the camera moves
         if (wallLeftImageLoaded) {
@@ -1334,13 +1417,13 @@ function generateNewPlatforms() {
           const originalHeight = 2555;
           const aspectRatio = originalHeight / originalWidth;
           const scaledHeight = wallWidth * aspectRatio; // Maintain aspect ratio
-          
+
           // Calculate how many full images needed to cover screen height
           const imagesNeeded = Math.ceil(canvasH / scaledHeight) + 1; // +1 for smooth scrolling
-          
+
           // Calculate the offset for seamless vertical scrolling
-          const yOffset = (cameraY % scaledHeight);
-          
+          const yOffset = cameraY % scaledHeight;
+
           // Draw multiple segments of the wall to cover the screen height
           for (let i = 0; i < imagesNeeded; i++) {
             const yPos = i * scaledHeight - yOffset;
@@ -1349,7 +1432,7 @@ function generateNewPlatforms() {
               0, // x position on canvas
               yPos, // y position on canvas
               wallWidth, // width on canvas
-              scaledHeight // height on canvas, maintaining aspect ratio
+              scaledHeight, // height on canvas, maintaining aspect ratio
             );
           }
         } else {
@@ -1357,7 +1440,7 @@ function generateNewPlatforms() {
           ctx.fillStyle = "#1a202c"; // Darker color for walls
           ctx.fillRect(0, 0, wallWidth, canvasH);
         }
-        
+
         // Draw right wall using the provided image - same technique as left wall
         if (wallRightImageLoaded) {
           // Calculate proper height based on original aspect ratio (assuming the same for right wall)
@@ -1365,13 +1448,13 @@ function generateNewPlatforms() {
           const originalHeight = 2555;
           const aspectRatio = originalHeight / originalWidth;
           const scaledHeight = wallWidth * aspectRatio; // Maintain aspect ratio
-          
+
           // Calculate how many full images needed to cover screen height
           const imagesNeeded = Math.ceil(canvasH / scaledHeight) + 1; // +1 for smooth scrolling
-          
+
           // Calculate the offset for seamless vertical scrolling
-          const yOffset = (cameraY % scaledHeight);
-          
+          const yOffset = cameraY % scaledHeight;
+
           // Draw multiple segments of the wall to cover the screen height
           for (let i = 0; i < imagesNeeded; i++) {
             const yPos = i * scaledHeight - yOffset;
@@ -1380,7 +1463,7 @@ function generateNewPlatforms() {
               canvasW - wallWidth, // x position on canvas (right side)
               yPos, // y position on canvas
               wallWidth, // width on canvas
-              scaledHeight // height on canvas, maintaining aspect ratio
+              scaledHeight, // height on canvas, maintaining aspect ratio
             );
           }
         } else {
@@ -1392,54 +1475,95 @@ function generateNewPlatforms() {
         // Platform blocks
         for (const block of blocks) {
           const screenY = block.y - cameraY; // Adjust for camera
-          
+
           // FIXED: Only draw blocks that are fully or mostly visible
-          if (screenY >= -5 && screenY <= canvasH + 5) { // Small tolerance for edge smoothing
+          if (screenY >= -5 && screenY <= canvasH + 5) {
+            // Small tolerance for edge smoothing
             // Draw block using image if loaded, otherwise use fallback
             if (imageLoaded) {
-              ctx.drawImage(blockImage, Math.round(block.x), Math.round(screenY), block.width, block.height);
+              ctx.drawImage(
+                blockImage,
+                Math.round(block.x),
+                Math.round(screenY),
+                block.width,
+                block.height,
+              );
             } else {
               // Fallback to original block rendering
               ctx.fillStyle = "#4a5568";
-              ctx.fillRect(Math.round(block.x), Math.round(screenY), block.width, block.height);
-              
+              ctx.fillRect(
+                Math.round(block.x),
+                Math.round(screenY),
+                block.width,
+                block.height,
+              );
+
               // Add texture to blocks (scaled to match larger block size)
               ctx.fillStyle = "#3a4559";
-              ctx.fillRect(Math.round(block.x + 3), Math.round(screenY + 3), block.width - 6, 5);
-              ctx.fillRect(Math.round(block.x + 3), Math.round(screenY + 12), block.width - 10, 4);
-              ctx.fillRect(Math.round(block.x + 8), Math.round(screenY + 20), block.width - 16, 5);
+              ctx.fillRect(
+                Math.round(block.x + 3),
+                Math.round(screenY + 3),
+                block.width - 6,
+                5,
+              );
+              ctx.fillRect(
+                Math.round(block.x + 3),
+                Math.round(screenY + 12),
+                block.width - 10,
+                4,
+              );
+              ctx.fillRect(
+                Math.round(block.x + 8),
+                Math.round(screenY + 20),
+                block.width - 16,
+                5,
+              );
             }
           }
         }
 
         // Reset screen shake transform
         ctx.restore(); // Always restore the context state
-        
+
         // Pickups
         for (const pickup of pickups) {
           const screenY = pickup.y - cameraY; // Adjust for camera
-          
+
           // Only draw pickups that are fully or mostly visible
-          if (screenY >= -20 && screenY <= canvasH + 20) { // Increased tolerance for edge smoothing
+          if (screenY >= -20 && screenY <= canvasH + 20) {
+            // Increased tolerance for edge smoothing
             if (coinSpriteLoaded) {
               // Increment the animation counter for this pickup
-              pickup.frameCounter = (pickup.frameCounter + 1) % (coinAnimationSpeed * coinFrameCount);
-              
+              pickup.frameCounter =
+                (pickup.frameCounter + 1) %
+                (coinAnimationSpeed * coinFrameCount);
+
               // Calculate the current frame index
-              pickup.frameIndex = Math.floor(pickup.frameCounter / coinAnimationSpeed);
-              
+              pickup.frameIndex = Math.floor(
+                pickup.frameCounter / coinAnimationSpeed,
+              );
+
               // Draw the correct frame from the sprite sheet
               ctx.drawImage(
                 coinSpriteImage,
-                pickup.frameIndex * coinFrameWidth, 0, // Source x, y (frame position in sprite)
-                coinFrameWidth, 100, // Source width, height (size of frame in sprite)
-                Math.round(pickup.x), Math.round(screenY), // Destination x, y
-                pickup.width, pickup.height // Destination width, height
+                pickup.frameIndex * coinFrameWidth,
+                0, // Source x, y (frame position in sprite)
+                coinFrameWidth,
+                100, // Source width, height (size of frame in sprite)
+                Math.round(pickup.x),
+                Math.round(screenY), // Destination x, y
+                pickup.width,
+                pickup.height, // Destination width, height
               );
             } else {
               // Fallback to color rectangle if sprite not loaded
               ctx.fillStyle = "#f6ad55"; // Orange color for pickups
-              ctx.fillRect(Math.round(pickup.x), Math.round(screenY), pickup.width, pickup.height);
+              ctx.fillRect(
+                Math.round(pickup.x),
+                Math.round(screenY),
+                pickup.width,
+                pickup.height,
+              );
             }
           }
         }
@@ -1464,31 +1588,40 @@ function generateNewPlatforms() {
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
           b.y += b.velocityY;
-          
+
           const screenY = b.y - cameraY;
-          
+
           // Remove bullets that go off screen or exceed their lifetime
           // Use a larger threshold to ensure complete removal
-          if (screenY > canvasH + 20 || screenY < -20 || Date.now() - b.createdAt > bulletLifetime) {
+          if (
+            screenY > canvasH + 20 ||
+            screenY < -20 ||
+            Date.now() - b.createdAt > bulletLifetime
+          ) {
             bullets.splice(i, 1);
             continue;
           }
-          
+
           // Check if this is a hover effect particle
           if (b.isEffect) {
             // Draw hover effect particles with fade out
             const age = Date.now() - b.createdAt;
-            const opacity = 1 - (age / b.lifetime);
-            
+            const opacity = 1 - age / b.lifetime;
+
             if (age > b.lifetime) {
               bullets.splice(i, 1);
               continue;
             }
-            
+
             ctx.save();
             ctx.globalAlpha = opacity;
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(Math.round(b.x), Math.round(screenY), b.width, b.height);
+            ctx.fillRect(
+              Math.round(b.x),
+              Math.round(screenY),
+              b.width,
+              b.height,
+            );
             ctx.restore();
           } else {
             // Regular bullets
@@ -1496,88 +1629,113 @@ function generateNewPlatforms() {
             ctx.shadowBlur = 10;
             ctx.shadowColor = "#ffd700";
             ctx.fillStyle = "#ffffff"; // Bright center
-            ctx.fillRect(Math.round(b.x + b.width/4), Math.round(screenY), b.width/2, b.height);
+            ctx.fillRect(
+              Math.round(b.x + b.width / 4),
+              Math.round(screenY),
+              b.width / 2,
+              b.height,
+            );
             ctx.fillStyle = "#f6e05e"; // Yellow outer part
-            ctx.fillRect(Math.round(b.x), Math.round(screenY), b.width, b.height);
+            ctx.fillRect(
+              Math.round(b.x),
+              Math.round(screenY),
+              b.width,
+              b.height,
+            );
             ctx.restore();
-          
           }
         }
 
         // Enemies
         for (const enemy of enemies) {
           const screenY = enemy.y - cameraY;
-          
+
           // FIXED: Only draw enemies that are fully or mostly visible with larger margin
-          if (screenY >= -20 && screenY <= canvasH + 20) { // Increased tolerance for edge smoothing
+          if (screenY >= -20 && screenY <= canvasH + 20) {
+            // Increased tolerance for edge smoothing
             // Draw floating effect (subtle up and down motion)
             const floatOffset = Math.sin(Date.now() / 200 + enemy.x) * 3;
-            
+
             ctx.save();
-            ctx.translate(Math.round(enemy.x + enemy.width / 2), Math.round(screenY + enemy.height / 2 + floatOffset));
-            
-            if (enemy.type === 'ufo') {
+            ctx.translate(
+              Math.round(enemy.x + enemy.width / 2),
+              Math.round(screenY + enemy.height / 2 + floatOffset),
+            );
+
+            if (enemy.type === "ufo") {
               if (ufoImageLoaded) {
                 const halfSize = enemySize / 2;
                 ctx.drawImage(ufoImage, -halfSize, -halfSize, enemySize, enemySize);
               } else {
-                ctx.fillStyle = '#f56565';
+                ctx.fillStyle = "#f56565";
                 const halfSize = enemySize / 2;
                 ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
               }
             } else if (enemyImageLoaded) {
-              // Draw alien using the loaded image
+              // Draw enemy using the loaded image
               const halfSize = enemySize / 2;
-              ctx.drawImage(enemyImage, -halfSize, -halfSize, enemySize, enemySize);
+              ctx.drawImage(
+                enemyImage,
+                -halfSize,
+                -halfSize,
+                enemySize,
+                enemySize,
+              );
             } else {
               // Fallback to red square if image isn't loaded
               ctx.fillStyle = "#f56565"; // Red for enemies
               const halfSize = enemySize / 2;
               ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
             }
-            
+
             ctx.restore();
           }
         }
 
         // Player (flashing when invulnerable)
-        if (player.invulnerable <= 0 || Math.floor(player.invulnerable / 5) % 2 === 0) {
+        if (
+          player.invulnerable <= 0 ||
+          Math.floor(player.invulnerable / 5) % 2 === 0
+        ) {
           ctx.save();
-          ctx.translate(player.x + player.width / 2, player.y - cameraY + player.height / 2);
-          
+          ctx.translate(
+            player.x + player.width / 2,
+            player.y - cameraY + player.height / 2,
+          );
+
           if (playerImageLoaded) {
             // Draw player using the loaded image
             const halfWidth = playerSize / 2;
             const halfHeight = playerSize / 2;
-            
+
             // Account for the image's aspect ratio (545x365)
             const imageAspectRatio = 545 / 365; // width / height
             const scaledHalfWidth = halfHeight * imageAspectRatio;
-            
+
             // Draw the image maintaining its aspect ratio
             ctx.drawImage(
-              playerImage, 
+              playerImage,
               -scaledHalfWidth, // Center horizontally based on aspect ratio
-              -halfHeight, 
+              -halfHeight,
               scaledHalfWidth * 2, // Full width adjusted for aspect ratio
-              halfHeight * 2 // Full height
+              halfHeight * 2, // Full height
             );
           } else {
             // Fallback to original player rendering if image isn't loaded
             ctx.fillStyle = playerColor;
             ctx.fill(playerPath);
           }
-          
+
           ctx.restore();
         }
 
         updateUI();
         requestAnimationFrame(gameLoop);
       }
-      
+
       function updateEnemies() {
         const now = Date.now();
-        
+
         for (let i = enemies.length - 1; i >= 0; i--) {
           const enemy = enemies[i];
 
@@ -1587,48 +1745,51 @@ function generateNewPlatforms() {
             continue; // Skip this enemy
           }
 
-          if (enemy.type === 'ufo') {
+          if (enemy.type === "ufo") {
             enemy.x += enemy.speed * enemy.direction;
             if (enemy.x <= enemy.rangeLeft || enemy.x >= enemy.rangeRight) {
               enemy.direction *= -1;
               enemy.x = Math.max(enemy.rangeLeft, Math.min(enemy.rangeRight, enemy.x));
             }
 
-            if (player.invulnerable <= 0 &&
-                player.x < enemy.x + enemy.width &&
-                player.x + player.width > enemy.x &&
-                player.y < enemy.y + enemy.height &&
-                player.y + player.height > enemy.y) {
-                  const jumpingOnEnemy = player.velocityY > 0 &&
-                                         player.y + player.height >= enemy.y &&
-                                         player.y + player.height <= enemy.y + enemy.height * 0.6 &&
-                                         player.y < enemy.y + enemy.height * 0.5;
-                  if (!jumpingOnEnemy) {
-                    player.health--;
-                    player.invulnerable = 60;
-                    hitSound();
-                    updateHealthDisplay();
-                    const knockbackDir = player.x < enemy.x ? -1 : 1;
-                    player.velocityX = knockbackDir * 8;
-                    player.velocityY = -5;
-                    if (player.health <= 0) {
-                      gameOver = true;
-                    }
-                  }
+            if (
+              player.invulnerable <= 0 &&
+              player.x < enemy.x + enemy.width &&
+              player.x + player.width > enemy.x &&
+              player.y < enemy.y + enemy.height &&
+              player.y + player.height > enemy.y
+            ) {
+              const jumpingOnEnemy =
+                player.velocityY > 0 &&
+                player.y + player.height >= enemy.y &&
+                player.y + player.height <= enemy.y + enemy.height * 0.6 &&
+                player.y < enemy.y + enemy.height * 0.5;
+              if (!jumpingOnEnemy) {
+                player.health--;
+                player.invulnerable = 60;
+                hitSound();
+                updateHealthDisplay();
+                const knockbackDir = player.x < enemy.x ? -1 : 1;
+                player.velocityX = knockbackDir * 8;
+                player.velocityY = -5;
+                if (player.health <= 0) {
+                  gameOver = true;
+                }
+              }
             }
             continue;
           }
-          
+
           // Update enemy's target direction toward player
           const dx = player.x - enemy.x;
           const dy = player.y - enemy.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          
+
           // Make a movement decision every 500ms
           // This creates "dumber" AI that doesn't instantly react
           if (now - enemy.lastMoveTime > 500) {
             enemy.lastMoveTime = now;
-            
+
             // Normalize direction vector
             if (distance > 0) {
               enemy.targetDirX = dx / distance;
@@ -1638,39 +1799,47 @@ function generateNewPlatforms() {
               enemy.targetDirY = 0;
             }
           }
-          
+
           // Apply movement toward player (with platform collision)
-          if (distance < 400) { // Only move if player is within range
+          if (distance < 400) {
+            // Only move if player is within range
             // Gradually adjust velocity toward target direction (slow turning)
-            enemy.velocityX = enemy.velocityX * 0.9 + enemy.targetDirX * enemy.speed * 0.1;
-            enemy.velocityY = enemy.velocityY * 0.9 + enemy.targetDirY * enemy.speed * 0.1;
-            
+            enemy.velocityX =
+              enemy.velocityX * 0.9 + enemy.targetDirX * enemy.speed * 0.1;
+            enemy.velocityY =
+              enemy.velocityY * 0.9 + enemy.targetDirY * enemy.speed * 0.1;
+
             // Cap maximum speed
-            const currentSpeed = Math.sqrt(enemy.velocityX * enemy.velocityX + enemy.velocityY * enemy.velocityY);
+            const currentSpeed = Math.sqrt(
+              enemy.velocityX * enemy.velocityX +
+                enemy.velocityY * enemy.velocityY,
+            );
             if (currentSpeed > enemy.speed) {
               enemy.velocityX = (enemy.velocityX / currentSpeed) * enemy.speed;
               enemy.velocityY = (enemy.velocityY / currentSpeed) * enemy.speed;
             }
-            
+
             // Apply movement
             const newX = enemy.x + enemy.velocityX;
             const newY = enemy.y + enemy.velocityY;
-            
+
             // Check for collision with platforms (dumb AI that gets stuck)
             let blocked = false;
-            
+
             // Check platform collisions
             for (const block of blocks) {
               // Horizontal collision check
-              if (newY < block.y + block.height && 
-                  newY + enemy.height > block.y && 
-                  newX < block.x + block.width && 
-                  newX + enemy.width > block.x) {
+              if (
+                newY < block.y + block.height &&
+                newY + enemy.height > block.y &&
+                newX < block.x + block.width &&
+                newX + enemy.width > block.x
+              ) {
                 blocked = true;
                 break;
               }
             }
-            
+
             // Only move if not blocked
             if (!blocked) {
               enemy.x = newX;
@@ -1681,44 +1850,47 @@ function generateNewPlatforms() {
               enemy.velocityY *= -0.5;
             }
           }
-          
+
           // Player collision (if not jumping on top)
-          if (player.invulnerable <= 0 &&
-              player.x < enemy.x + enemy.width &&
-              player.x + player.width > enemy.x &&
-              player.y < enemy.y + enemy.height &&
-              player.y + player.height > enemy.y) {
-                
-              // Using a more generous definition of "jumping on top" to prevent false damage
-              const jumpingOnEnemy = player.velocityY > 0 && 
-                                     player.y + player.height >= enemy.y && 
-                                     player.y + player.height <= enemy.y + enemy.height * 0.6 && // Increased from 0.5 to 0.6 (60% of enemy height)
-                                     player.y < enemy.y + enemy.height * 0.5; // Make sure player's top is above the enemy midpoint
-              
-              if (!jumpingOnEnemy) {
-                // Player hit by enemy from the side or below
-                player.health--;
-                player.invulnerable = 60; // Give player invulnerability frames (60 frames ≈ 1 second)
-                hitSound();
-                updateHealthDisplay();
-                
-                // Knock player back
-                const knockbackDir = player.x < enemy.x ? -1 : 1;
-                player.velocityX = knockbackDir * 8;
-                player.velocityY = -5;
-                
-                if (player.health <= 0) {
-                  gameOver = true;
-                }
+          if (
+            player.invulnerable <= 0 &&
+            player.x < enemy.x + enemy.width &&
+            player.x + player.width > enemy.x &&
+            player.y < enemy.y + enemy.height &&
+            player.y + player.height > enemy.y
+          ) {
+            // Using a more generous definition of "jumping on top" to prevent false damage
+            const jumpingOnEnemy =
+              player.velocityY > 0 &&
+              player.y + player.height >= enemy.y &&
+              player.y + player.height <= enemy.y + enemy.height * 0.6 && // Increased from 0.5 to 0.6 (60% of enemy height)
+              player.y < enemy.y + enemy.height * 0.5; // Make sure player's top is above the enemy midpoint
+
+            if (!jumpingOnEnemy) {
+              // Player hit by enemy from the side or below
+              player.health--;
+              player.invulnerable = 60; // Give player invulnerability frames (60 frames ≈ 1 second)
+              hitSound();
+              updateHealthDisplay();
+
+              // Knock player back
+              const knockbackDir = player.x < enemy.x ? -1 : 1;
+              player.velocityX = knockbackDir * 8;
+              player.velocityY = -5;
+
+              if (player.health <= 0) {
+                gameOver = true;
               }
-          
+            }
           }
         }
       }
-      
+
       function drawGameOver() {
         // Send score to Farcade SDK and let it handle the game over screen
-        window.FarcadeSDK.singlePlayer.actions.gameOver({ score: Math.floor(score) });
+        window.FarcadeSDK.singlePlayer.actions.gameOver({
+          score: Math.floor(score),
+        });
       }
 
       function setupEventListeners() {
@@ -1769,7 +1941,7 @@ function generateNewPlatforms() {
             }
 
             initAudio();
-            
+
             isJumpButtonPressed = true;
             if (player.canJump) {
               player.velocityY = jumpStrength;
@@ -1784,7 +1956,7 @@ function generateNewPlatforms() {
             isJumpButtonPressed = false;
           },
         );
-        
+
         // Keyboard controls
         window.addEventListener("keydown", (e) => {
           if (gameOver) {
@@ -1792,7 +1964,7 @@ function generateNewPlatforms() {
           }
 
           initAudio();
-          
+
           if (e.key === "ArrowLeft" || e.key === "a") isMovingLeft = true;
           if (e.key === "ArrowRight" || e.key === "d") isMovingRight = true;
           if (e.key === "ArrowUp" || e.key === "w" || e.key === " ") {
@@ -1806,7 +1978,7 @@ function generateNewPlatforms() {
             }
           }
         });
-        
+
         window.addEventListener("keyup", (e) => {
           if (e.key === "ArrowLeft" || e.key === "a") isMovingLeft = false;
           if (e.key === "ArrowRight" || e.key === "d") isMovingRight = false;
@@ -1822,12 +1994,12 @@ function generateNewPlatforms() {
       resizeCanvas();
       setupEventListeners();
       gameLoop();
-      
+
       // Initialize Farcade SDK when game is fully loaded
       window.FarcadeSDK.singlePlayer.actions.ready();
-      
+
       // Handle play again requests from Farcade
-      window.FarcadeSDK.on('play_again', () => {
+      window.FarcadeSDK.on("play_again", () => {
         console.log("Farcade play_again event received");
         resetGame();
         // Add a small delay to focus after the UI has updated
@@ -1837,18 +2009,21 @@ function generateNewPlatforms() {
           requestAnimationFrame(gameLoop);
         }
       });
-      
+
       // Handle mute/unmute requests from Farcade
-      window.FarcadeSDK.on('toggle_mute', (data) => {
+      window.FarcadeSDK.on("toggle_mute", (data) => {
         // Set game audio based on data.isMuted
         audioInitialized = !data.isMuted;
-        if (audioContext && data.isMuted && audioContext.state === 'running') {
+        if (audioContext && data.isMuted && audioContext.state === "running") {
           audioContext.suspend();
-        } else if (audioContext && !data.isMuted && audioContext.state === 'suspended') {
+        } else if (
+          audioContext &&
+          !data.isMuted &&
+          audioContext.state === "suspended"
+        ) {
           audioContext.resume();
         }
       });
     </script>
   </body>
 </html>
-<!-- End of Path: index.html -->
