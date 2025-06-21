@@ -1620,7 +1620,7 @@
             // Draw floating effect (subtle up and down motion)
             const baseFloat = Math.sin(Date.now() / 200 + enemy.x) * 3;
             const ufoFloat =
-              Math.sin(Date.now() / 1000 + enemy.x / 2) * 6; // Slow, smooth bob
+              Math.sin(Date.now() / 2000 + enemy.x / 2) * 5; // Slower, gentle bob
             const floatOffset = enemy.type === "ufo" ? ufoFloat : baseFloat;
 
             ctx.save();
