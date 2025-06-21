@@ -231,6 +231,10 @@
       enemyImage.src =
         "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/alien-2HqllwtnwvnmklNebwwQXxuoMpcGtK.png";
 
+      const ufoImage = new Image();
+      ufoImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/ufo-MSubLURp3ZoEjD2tZpMDYfN7XMTsUg.png";
+
       const playerImage = new Image();
       playerImage.src =
         "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/hero-1-nlc5QYIpITwaY1NGM8RChU0xafPC1y.png";
@@ -247,6 +251,7 @@
       let wallLeftImageLoaded = false;
       let wallRightImageLoaded = false;
       let enemyImageLoaded = false;
+      let ufoImageLoaded = false;
       let playerImageLoaded = false;
       let heartImageLoaded = false;
       let coinSpriteLoaded = false;
@@ -265,6 +270,10 @@
 
       enemyImage.onload = () => {
         enemyImageLoaded = true;
+      };
+
+      ufoImage.onload = () => {
+        ufoImageLoaded = true;
       };
 
       playerImage.onload = () => {
@@ -301,6 +310,11 @@
       enemyImage.onerror = () => {
         console.warn("Failed to load enemy image, using fallback rendering");
         enemyImageLoaded = false;
+      };
+
+      ufoImage.onerror = () => {
+        console.warn("Failed to load ufo image, using fallback rendering");
+        ufoImageLoaded = false;
       };
 
       playerImage.onerror = () => {
@@ -707,6 +721,7 @@
               const enemyY = y - enemySize;
 
               enemies.push({
+                type: "alien",
                 x: enemyX,
                 y: enemyY,
                 width: enemySize,
@@ -717,6 +732,25 @@
                 lastMoveTime: 0, // Track time for making movement decisions
               });
             }
+          }
+
+          // Additional chance to spawn a ufo that moves horizontally
+          if (Math.random() < 0.2) {
+            const rangeLeft = x;
+            const rangeRight = x + Math.max(platformInfo.width - enemySize, 0);
+            const enemyX = rangeLeft + Math.random() * (rangeRight - rangeLeft);
+            const enemyY = y - enemySize * 1.2;
+            enemies.push({
+              type: "ufo",
+              x: enemyX,
+              y: enemyY,
+              width: enemySize,
+              height: enemySize,
+              direction: Math.random() < 0.5 ? -1 : 1,
+              speed: 1,
+              rangeLeft,
+              rangeRight,
+            });
           }
 
           // Random vertical distance between platforms (with occasional bigger gaps)
@@ -790,6 +824,7 @@
                 const enemyY = y - enemySize;
 
                 enemies.push({
+                  type: "alien",
                   x: enemyX,
                   y: enemyY,
                   width: enemySize,
@@ -800,6 +835,25 @@
                   lastMoveTime: 0,
                 });
               }
+            }
+
+            // Additional chance to spawn a ufo that moves horizontally
+            if (Math.random() < 0.2) {
+              const rangeLeft = x;
+              const rangeRight = x + Math.max(platformInfo.width - enemySize, 0);
+              const enemyX = rangeLeft + Math.random() * (rangeRight - rangeLeft);
+              const enemyY = y - enemySize * 1.2;
+              enemies.push({
+                type: "ufo",
+                x: enemyX,
+                y: enemyY,
+                width: enemySize,
+                height: enemySize,
+                direction: Math.random() < 0.5 ? -1 : 1,
+                speed: 1,
+                rangeLeft,
+                rangeRight,
+              });
             }
 
             // Random vertical distance between platforms (decreased distances for more density)
@@ -1608,6 +1662,16 @@
               Math.round(screenY + enemy.height / 2 + floatOffset),
             );
 
+            if (enemy.type === "ufo") {
+              if (ufoImageLoaded) {
+                const halfSize = enemySize / 2;
+                ctx.drawImage(ufoImage, -halfSize, -halfSize, enemySize, enemySize);
+              } else {
+                ctx.fillStyle = "#f56565";
+                const halfSize = enemySize / 2;
+                ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
+              }
+            } else if (enemyImageLoaded) {
             if (enemyImageLoaded) {
               // Draw enemy using the loaded image
               const halfSize = enemySize / 2;
@@ -1680,6 +1744,41 @@
           const screenY = enemy.y - cameraY;
           if (screenY < -100 || screenY > canvasH + 100) {
             continue; // Skip this enemy
+          }
+
+          if (enemy.type === "ufo") {
+            enemy.x += enemy.speed * enemy.direction;
+            if (enemy.x <= enemy.rangeLeft || enemy.x >= enemy.rangeRight) {
+              enemy.direction *= -1;
+              enemy.x = Math.max(enemy.rangeLeft, Math.min(enemy.rangeRight, enemy.x));
+            }
+
+            if (
+              player.invulnerable <= 0 &&
+              player.x < enemy.x + enemy.width &&
+              player.x + player.width > enemy.x &&
+              player.y < enemy.y + enemy.height &&
+              player.y + player.height > enemy.y
+            ) {
+              const jumpingOnEnemy =
+                player.velocityY > 0 &&
+                player.y + player.height >= enemy.y &&
+                player.y + player.height <= enemy.y + enemy.height * 0.6 &&
+                player.y < enemy.y + enemy.height * 0.5;
+              if (!jumpingOnEnemy) {
+                player.health--;
+                player.invulnerable = 60;
+                hitSound();
+                updateHealthDisplay();
+                const knockbackDir = player.x < enemy.x ? -1 : 1;
+                player.velocityX = knockbackDir * 8;
+                player.velocityY = -5;
+                if (player.health <= 0) {
+                  gameOver = true;
+                }
+              }
+            }
+            continue;
           }
 
           // Update enemy's target direction toward player
