@@ -17,6 +17,7 @@ A challenging vertical platformer game where you use "gun-boots" to shoot downwa
 
 ### Enemies & Hazards
 - Turret-like enemies that shoot projectiles at you
+- Floating UFOs that drift back and forth
 - Defeat enemies by shooting them or jumping on their heads
 - Enemies sometimes drop point pickups when defeated
 

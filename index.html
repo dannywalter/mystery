@@ -246,6 +246,10 @@
       enemyImage.src =
         "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/alien-2HqllwtnwvnmklNebwwQXxuoMpcGtK.png";
 
+      const ufoImage = new Image();
+      ufoImage.src =
+        "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/ufo-MSubLURp3ZoEjD2tZpMDYfN7XMTsUg.png";
+
       const playerImage = new Image();
       playerImage.src =
         "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/f2822e07-b744-4bb2-842d-f6b4bd842647/hero-1-nlc5QYIpITwaY1NGM8RChU0xafPC1y.png";
@@ -263,6 +267,7 @@
       let wallLeftImageLoaded = false;
       let wallRightImageLoaded = false;
       let enemyImageLoaded = false;
+      let ufoImageLoaded = false;
       let playerImageLoaded = false;
       let heartImageLoaded = false;
       let coinSpriteLoaded = false;
@@ -285,6 +290,10 @@
 
       enemyImage.onload = () => {
         enemyImageLoaded = true;
+      };
+
+      ufoImage.onload = () => {
+        ufoImageLoaded = true;
       };
 
       playerImage.onload = () => {
@@ -322,6 +331,11 @@
       enemyImage.onerror = () => {
         console.warn("Failed to load enemy image, using fallback rendering");
         enemyImageLoaded = false;
+      };
+
+      ufoImage.onerror = () => {
+        console.warn("Failed to load ufo image, using fallback rendering");
+        ufoImageLoaded = false;
       };
 
       playerImage.onerror = () => {
@@ -694,6 +708,7 @@
               const enemyY = y - enemySize;
 
               enemies.push({
+                type: "alien",
                 x: enemyX,
                 y: enemyY,
                 width: enemySize,
@@ -704,6 +719,24 @@
                 lastMoveTime: 0, // Track time for making movement decisions
               });
             }
+          }
+
+          // Additionally spawn a ufo enemy on some platforms
+          if (Math.random() < 0.3) {
+            const ufoX = x + Math.random() * Math.max(0, platformInfo.width - enemySize);
+            const ufoY = y - enemySize * 1.5;
+
+            enemies.push({
+              type: "ufo",
+              x: ufoX,
+              y: ufoY,
+              width: enemySize,
+              height: enemySize,
+              speed: 1,
+              direction: Math.random() < 0.5 ? -1 : 1,
+              baseX: ufoX,
+              range: platformInfo.width / 2,
+            });
           }
 
           // Random vertical distance between platforms (with occasional bigger gaps)
@@ -758,6 +791,7 @@
                 const enemyY = y - enemySize;
 
                 enemies.push({
+                  type: "alien",
                   x: enemyX,
                   y: enemyY,
                   width: enemySize,
@@ -768,6 +802,24 @@
                   lastMoveTime: 0,
                 });
               }
+            }
+
+            // Spawn a hovering ufo occasionally
+            if (Math.random() < 0.3) {
+              const ufoX = x + Math.random() * Math.max(0, platformInfo.width - enemySize);
+              const ufoY = y - enemySize * 1.5;
+
+              enemies.push({
+                type: "ufo",
+                x: ufoX,
+                y: ufoY,
+                width: enemySize,
+                height: enemySize,
+                speed: 1,
+                direction: Math.random() < 0.5 ? -1 : 1,
+                baseX: ufoX,
+                range: platformInfo.width / 2,
+              });
             }
 
             // Random vertical distance between platforms (decreased distances for more density)
@@ -1569,17 +1621,29 @@
             const floatOffset = Math.sin(Date.now() / 200 + enemy.x) * 3;
 
             ctx.save();
-            ctx.translate(Math.round(enemy.x + enemy.width / 2), Math.round(screenY + enemy.height / 2 + floatOffset));
+            ctx.translate(
+              Math.round(enemy.x + enemy.width / 2),
+              Math.round(screenY + enemy.height / 2 + floatOffset)
+            );
 
-            if (enemyImageLoaded) {
-              // Draw enemy using the loaded image
-              const halfSize = enemySize / 2;
-              ctx.drawImage(enemyImage, -halfSize, -halfSize, enemySize, enemySize);
+            if (enemy.type === "ufo") {
+              if (ufoImageLoaded) {
+                const halfSize = enemySize / 2;
+                ctx.drawImage(ufoImage, -halfSize, -halfSize, enemySize, enemySize);
+              } else {
+                ctx.fillStyle = "#a0aec0";
+                const halfSize = enemySize / 2;
+                ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
+              }
             } else {
-              // Fallback to red square if image isn't loaded
-              ctx.fillStyle = "#f56565"; // Red for enemies
-              const halfSize = enemySize / 2;
-              ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
+              if (enemyImageLoaded) {
+                const halfSize = enemySize / 2;
+                ctx.drawImage(enemyImage, -halfSize, -halfSize, enemySize, enemySize);
+              } else {
+                ctx.fillStyle = "#f56565"; // Red for enemies
+                const halfSize = enemySize / 2;
+                ctx.fillRect(-halfSize, -halfSize, enemySize, enemySize);
+              }
             }
 
             ctx.restore();
@@ -1630,69 +1694,70 @@
             continue; // Skip this enemy
           }
 
-          // Update enemy's target direction toward player
-          const dx = player.x - enemy.x;
-          const dy = player.y - enemy.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (enemy.type === "ufo") {
+            // Simple horizontal back-and-forth movement
+            enemy.x += enemy.speed * enemy.direction;
 
-          // Make a movement decision every 500ms
-          // This creates "dumber" AI that doesn't instantly react
-          if (now - enemy.lastMoveTime > 500) {
-            enemy.lastMoveTime = now;
-
-            // Normalize direction vector
-            if (distance > 0) {
-              enemy.targetDirX = dx / distance;
-              enemy.targetDirY = dy / distance;
-            } else {
-              enemy.targetDirX = 0;
-              enemy.targetDirY = 0;
+            if (
+              enemy.x < enemy.baseX - enemy.range ||
+              enemy.x > enemy.baseX + enemy.range ||
+              enemy.x < wallWidth ||
+              enemy.x + enemy.width > canvasW - wallWidth
+            ) {
+              enemy.direction *= -1;
             }
-          }
+          } else {
+            // Update enemy's target direction toward player
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-          // Apply movement toward player (with platform collision)
-          if (distance < 400) {
-            // Only move if player is within range
-            // Gradually adjust velocity toward target direction (slow turning)
-            enemy.velocityX = enemy.velocityX * 0.9 + enemy.targetDirX * enemy.speed * 0.1;
-            enemy.velocityY = enemy.velocityY * 0.9 + enemy.targetDirY * enemy.speed * 0.1;
+            // Make a movement decision every 500ms
+            if (now - enemy.lastMoveTime > 500) {
+              enemy.lastMoveTime = now;
 
-            // Cap maximum speed
-            const currentSpeed = Math.sqrt(enemy.velocityX * enemy.velocityX + enemy.velocityY * enemy.velocityY);
-            if (currentSpeed > enemy.speed) {
-              enemy.velocityX = (enemy.velocityX / currentSpeed) * enemy.speed;
-              enemy.velocityY = (enemy.velocityY / currentSpeed) * enemy.speed;
-            }
-
-            // Apply movement
-            const newX = enemy.x + enemy.velocityX;
-            const newY = enemy.y + enemy.velocityY;
-
-            // Check for collision with platforms (dumb AI that gets stuck)
-            let blocked = false;
-
-            // Check platform collisions
-            for (const block of blocks) {
-              // Horizontal collision check
-              if (
-                newY < block.y + block.height &&
-                newY + enemy.height > block.y &&
-                newX < block.x + block.width &&
-                newX + enemy.width > block.x
-              ) {
-                blocked = true;
-                break;
+              if (distance > 0) {
+                enemy.targetDirX = dx / distance;
+                enemy.targetDirY = dy / distance;
+              } else {
+                enemy.targetDirX = 0;
+                enemy.targetDirY = 0;
               }
             }
 
-            // Only move if not blocked
-            if (!blocked) {
-              enemy.x = newX;
-              enemy.y = newY;
-            } else {
-              // If blocked, reverse direction briefly (bounce off walls)
-              enemy.velocityX *= -0.5;
-              enemy.velocityY *= -0.5;
+            if (distance < 400) {
+              enemy.velocityX = enemy.velocityX * 0.9 + enemy.targetDirX * enemy.speed * 0.1;
+              enemy.velocityY = enemy.velocityY * 0.9 + enemy.targetDirY * enemy.speed * 0.1;
+
+              const currentSpeed = Math.sqrt(enemy.velocityX * enemy.velocityX + enemy.velocityY * enemy.velocityY);
+              if (currentSpeed > enemy.speed) {
+                enemy.velocityX = (enemy.velocityX / currentSpeed) * enemy.speed;
+                enemy.velocityY = (enemy.velocityY / currentSpeed) * enemy.speed;
+              }
+
+              const newX = enemy.x + enemy.velocityX;
+              const newY = enemy.y + enemy.velocityY;
+
+              let blocked = false;
+              for (const block of blocks) {
+                if (
+                  newY < block.y + block.height &&
+                  newY + enemy.height > block.y &&
+                  newX < block.x + block.width &&
+                  newX + enemy.width > block.x
+                ) {
+                  blocked = true;
+                  break;
+                }
+              }
+
+              if (!blocked) {
+                enemy.x = newX;
+                enemy.y = newY;
+              } else {
+                enemy.velocityX *= -0.5;
+                enemy.velocityY *= -0.5;
+              }
             }
           }
 
