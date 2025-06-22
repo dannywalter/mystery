@@ -1017,6 +1017,7 @@
             y: player.y + player.height,
             width: bulletSize,
             height: bulletSize * 2,
+            velocityX: 0,
             velocityY: bulletSpeed,
             createdAt: now,
           });
@@ -1048,10 +1049,53 @@
             y: player.y + player.height,
             width: particleSize,
             height: particleSize,
+            velocityX: 0,
             velocityY: -particleSpeed, // Upward movement
-            isEffect: true, // Mark as visual effect
+            isEffect: "hover", // Mark as visual effect
             createdAt: Date.now(),
             lifetime: 300, // Short lifetime for effect particles
+          });
+        }
+      }
+
+      // Create a harmless poof effect at the given position
+      function createPoof(x, y) {
+        const particleCount = 6;
+        for (let i = 0; i < particleCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 2 + 1;
+
+          bullets.push({
+            x: x,
+            y: y,
+            width: 4,
+            height: 4,
+            velocityX: Math.cos(angle) * speed,
+            velocityY: Math.sin(angle) * speed,
+            isEffect: "poof",
+            createdAt: Date.now(),
+            lifetime: 300,
+          });
+        }
+      }
+
+      // Electric burst effect for future power-ups
+      function createElectricBurst(x, y) {
+        const particleCount = 8;
+        for (let i = 0; i < particleCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 4 + 2;
+
+          bullets.push({
+            x: x,
+            y: y,
+            width: 3,
+            height: 3,
+            velocityX: Math.cos(angle) * speed,
+            velocityY: Math.sin(angle) * speed,
+            isEffect: "electric",
+            createdAt: Date.now(),
+            lifetime: 400,
           });
         }
       }
@@ -1060,6 +1104,9 @@
         // Check player bullets against enemies and blocks
         for (let i = bullets.length - 1; i >= 0; i--) {
           const bullet = bullets[i];
+
+          // Skip visual effect particles
+          if (bullet.isEffect) continue;
 
           let bulletHit = false;
 
@@ -1080,6 +1127,12 @@
               window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
               score += enemyValue;
               bulletHit = true;
+
+              // Visual poof effect on enemy death
+              createPoof(
+                enemy.x + enemy.width / 2,
+                enemy.y + enemy.height / 2,
+              );
 
               // Chance to drop a pickup
               if (Math.random() < pickupDropChance) {
@@ -1250,6 +1303,12 @@
             enemies.splice(i, 1);
             hitSound();
             score += enemyValue;
+
+            // Visual poof effect on enemy death
+            createPoof(
+              enemy.x + enemy.width / 2,
+              enemy.y + enemy.height / 2,
+            );
 
             // Bounce the player
             player.velocityY = jumpStrength / 1.5;
@@ -1621,23 +1680,27 @@
           }
         } */
 
-        // Player bullets
+        // Player bullets and visual effects
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
           b.y += b.velocityY;
+          b.x += b.velocityX || 0;
 
           const screenY = b.y - cameraY;
 
           // Remove bullets that go off screen or exceed their lifetime
-          // Use a larger threshold to ensure complete removal
-          if (screenY > canvasH + 20 || screenY < -20 || Date.now() - b.createdAt > bulletLifetime) {
+          if (
+            screenY > canvasH + 20 ||
+            screenY < -20 ||
+            b.x < -20 ||
+            b.x > canvasW + 20 ||
+            Date.now() - b.createdAt > bulletLifetime
+          ) {
             bullets.splice(i, 1);
             continue;
           }
 
-          // Check if this is a hover effect particle
           if (b.isEffect) {
-            // Draw hover effect particles with fade out
             const age = Date.now() - b.createdAt;
             const opacity = 1 - age / b.lifetime;
 
@@ -1648,7 +1711,15 @@
 
             ctx.save();
             ctx.globalAlpha = opacity;
-            ctx.fillStyle = "#ffffff";
+
+            if (b.isEffect === "electric") {
+              ctx.fillStyle = "#7fdbff";
+            } else if (b.isEffect === "poof") {
+              ctx.fillStyle = "#dddddd";
+            } else {
+              ctx.fillStyle = "#ffffff";
+            }
+
             ctx.fillRect(Math.round(b.x), Math.round(screenY), b.width, b.height);
             ctx.restore();
           } else {

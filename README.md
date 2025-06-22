@@ -20,6 +20,7 @@ A challenging vertical platformer game where you use "gun-boots" to shoot downwa
 - Floating UFOs that drift back and forth
 - Defeat enemies by shooting them or jumping on their heads
 - Enemies sometimes drop point pickups when defeated
+- Defeated enemies now explode in a brief, harmless poof
 
 ### Health & Scoring
 - Four-hit health system displayed at the top of the screen
