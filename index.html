@@ -1178,6 +1178,42 @@
           }
         }
 
+        // Clamp against block sides after horizontal movement
+        for (const block of blocks) {
+          if (
+            player.y < block.y + block.height &&
+            player.y + player.height > block.y
+          ) {
+            if (
+              player.velocityX > 0 &&
+              player.x + player.width > block.x &&
+              player.x < block.x
+            ) {
+              player.x = block.x - player.width;
+              player.velocityX = 0;
+            } else if (
+              player.velocityX < 0 &&
+              player.x < block.x + block.width &&
+              player.x + player.width > block.x + block.width
+            ) {
+              player.x = block.x + block.width;
+              player.velocityX = 0;
+            }
+
+            // Optional: bump head on blocks above
+            if (
+              player.velocityY < 0 &&
+              player.x + player.width * 0.8 > block.x &&
+              player.x + player.width * 0.2 < block.x + block.width &&
+              player.y <= block.y + block.height &&
+              player.y > block.y
+            ) {
+              player.y = block.y + block.height;
+              player.velocityY = 0;
+            }
+          }
+        }
+
         // Enemy collisions - player jumps on enemies
         for (let i = enemies.length - 1; i >= 0; i--) {
           const enemy = enemies[i];
