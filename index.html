@@ -627,32 +627,42 @@
         return platformBlocks;
       }
 
-      // Helper to spawn an enemy only if it doesn't start inside a block
+      // Helper to spawn an enemy only if it doesn't start inside a block or another enemy
       function spawnEnemy(type, x, y, extra = {}) {
+        let newX = Math.max(wallWidth, Math.min(x, canvasW - wallWidth - enemySize));
         let newY = y;
-        let overlap = false;
 
-        // Check for blocks overlapping the proposed position
+        // Move enemy just above any overlapping block
         for (const block of blocks) {
           if (
-            x < block.x + block.width &&
-            x + enemySize > block.x &&
+            newX < block.x + block.width &&
+            newX + enemySize > block.x &&
             newY < block.y + block.height &&
             newY + enemySize > block.y
           ) {
-            overlap = true;
-            // Move enemy just above the conflicting block
             newY = Math.min(newY, block.y - enemySize);
           }
         }
 
-        // If still overlapping after adjustment, skip spawning
+        // Abort if still overlapping a block
         for (const block of blocks) {
           if (
-            x < block.x + block.width &&
-            x + enemySize > block.x &&
+            newX < block.x + block.width &&
+            newX + enemySize > block.x &&
             newY < block.y + block.height &&
             newY + enemySize > block.y
+          ) {
+            return;
+          }
+        }
+
+        // Abort if overlapping another enemy
+        for (const enemy of enemies) {
+          if (
+            newX < enemy.x + enemy.width &&
+            newX + enemySize > enemy.x &&
+            newY < enemy.y + enemy.height &&
+            newY + enemySize > enemy.y
           ) {
             return;
           }
@@ -662,7 +672,7 @@
           Object.assign(
             {
               type,
-              x,
+              x: newX,
               y: newY,
               width: enemySize,
               height: enemySize,
@@ -1968,6 +1978,77 @@
               if (player.health <= 0) {
                 gameOver = true;
               }
+            }
+          }
+        }
+        }
+
+        // Resolve collisions between enemies so they don't overlap
+        resolveEnemyCollisions();
+      }
+
+      // Push overlapping enemies apart and nudge their velocities
+      function resolveEnemyCollisions() {
+        for (let i = 0; i < enemies.length; i++) {
+          for (let j = i + 1; j < enemies.length; j++) {
+            const a = enemies[i];
+            const b = enemies[j];
+
+            if (
+              a.x < b.x + b.width &&
+              a.x + a.width > b.x &&
+              a.y < b.y + b.height &&
+              a.y + a.height > b.y
+            ) {
+              const dx = a.x + a.width / 2 - (b.x + b.width / 2);
+              const dy = a.y + a.height / 2 - (b.y + b.height / 2);
+              const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+              const overlap = enemySize - dist;
+              const nx = dx / dist;
+              const ny = dy / dist;
+
+              const ax = a.x;
+              const ay = a.y;
+              const bx = b.x;
+              const by = b.y;
+
+              a.x += nx * (overlap / 2);
+              a.y += ny * (overlap / 2);
+              b.x -= nx * (overlap / 2);
+              b.y -= ny * (overlap / 2);
+
+              a.x = Math.max(wallWidth, Math.min(a.x, canvasW - wallWidth - a.width));
+              b.x = Math.max(wallWidth, Math.min(b.x, canvasW - wallWidth - b.width));
+
+              for (const block of blocks) {
+                if (
+                  a.x < block.x + block.width &&
+                  a.x + a.width > block.x &&
+                  a.y < block.y + block.height &&
+                  a.y + a.height > block.y
+                ) {
+                  a.x = ax;
+                  a.y = ay;
+                  break;
+                }
+              }
+              for (const block of blocks) {
+                if (
+                  b.x < block.x + block.width &&
+                  b.x + b.width > block.x &&
+                  b.y < block.y + block.height &&
+                  b.y + b.height > block.y
+                ) {
+                  b.x = bx;
+                  b.y = by;
+                  break;
+                }
+              }
+
+              a.velocityX += nx * 0.2;
+              a.velocityY += ny * 0.2;
+              b.velocityX -= nx * 0.2;
+              b.velocityY -= ny * 0.2;
             }
           }
         }
