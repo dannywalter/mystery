@@ -624,6 +624,51 @@
         return platformBlocks;
       }
 
+      // Helper to spawn an enemy only if it doesn't start inside a block
+      function spawnEnemy(type, x, y, extra = {}) {
+        let newY = y;
+        let overlap = false;
+
+        // Check for blocks overlapping the proposed position
+        for (const block of blocks) {
+          if (
+            x < block.x + block.width &&
+            x + enemySize > block.x &&
+            newY < block.y + block.height &&
+            newY + enemySize > block.y
+          ) {
+            overlap = true;
+            // Move enemy just above the conflicting block
+            newY = Math.min(newY, block.y - enemySize);
+          }
+        }
+
+        // If still overlapping after adjustment, skip spawning
+        for (const block of blocks) {
+          if (
+            x < block.x + block.width &&
+            x + enemySize > block.x &&
+            newY < block.y + block.height &&
+            newY + enemySize > block.y
+          ) {
+            return;
+          }
+        }
+
+        enemies.push(
+          Object.assign(
+            {
+              type,
+              x,
+              y: newY,
+              width: enemySize,
+              height: enemySize,
+            },
+            extra
+          )
+        );
+      }
+
       function generatePlatformPattern(x, y) {
         // Choose a platform pattern
         const patternType = Math.random();
@@ -704,15 +749,12 @@
             for (let j = 0; j < enemyCount; j++) {
               // Space them out if there's more than one
               const offset = j * (platformInfo.width / Math.max(enemyCount, 1));
-              const enemyX = x + offset + Math.random() * Math.max(0, platformInfo.width / enemyCount - enemySize);
+              const enemyX =
+                x + offset +
+                Math.random() * Math.max(0, platformInfo.width / enemyCount - enemySize);
               const enemyY = y - enemySize;
 
-              enemies.push({
-                type: "alien",
-                x: enemyX,
-                y: enemyY,
-                width: enemySize,
-                height: enemySize,
+              spawnEnemy("alien", enemyX, enemyY, {
                 velocityX: 0,
                 velocityY: 0,
                 speed: 0.7 + Math.random() * 0.6, // Random speed between 0.7-1.3
@@ -726,12 +768,7 @@
             const ufoX = x + Math.random() * Math.max(0, platformInfo.width - enemySize);
             const ufoY = y - enemySize * 1.5;
 
-            enemies.push({
-              type: "ufo",
-              x: ufoX,
-              y: ufoY,
-              width: enemySize,
-              height: enemySize,
+            spawnEnemy("ufo", ufoX, ufoY, {
               speed: 1,
               direction: Math.random() < 0.5 ? -1 : 1,
               baseX: ufoX,
@@ -790,12 +827,7 @@
                 const enemyX = x + j * section + Math.random() * Math.max(0, section - enemySize);
                 const enemyY = y - enemySize;
 
-                enemies.push({
-                  type: "alien",
-                  x: enemyX,
-                  y: enemyY,
-                  width: enemySize,
-                  height: enemySize,
+                spawnEnemy("alien", enemyX, enemyY, {
                   velocityX: 0,
                   velocityY: 0,
                   speed: 0.7 + Math.random() * 0.8, // Increased max speed from 0.6 to 0.8
@@ -809,12 +841,7 @@
               const ufoX = x + Math.random() * Math.max(0, platformInfo.width - enemySize);
               const ufoY = y - enemySize * 1.5;
 
-              enemies.push({
-                type: "ufo",
-                x: ufoX,
-                y: ufoY,
-                width: enemySize,
-                height: enemySize,
+              spawnEnemy("ufo", ufoX, ufoY, {
                 speed: 1,
                 direction: Math.random() < 0.5 ? -1 : 1,
                 baseX: ufoX,
