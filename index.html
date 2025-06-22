@@ -1098,7 +1098,33 @@
         }
       }
 
+      // Clamp against block sides after horizontal movement
+      function clampPlayerToBlockSides() {
+        for (const block of blocks) {
+          if (
+            player.y < block.y + block.height &&
+            player.y + player.height > block.y
+          ) {
+            if (
+              player.velocityX > 0 &&
+              player.x + player.width > block.x &&
+              player.x < block.x
+            ) {
+              player.x = block.x - player.width;
+            } else if (
+              player.velocityX < 0 &&
+              player.x < block.x + block.width &&
+              player.x + player.width > block.x + block.width
+            ) {
+              player.x = block.x + block.width;
+            }
+          }
+        }
+      }
+
       function checkPlayerCollisions() {
+        // Clamp against block sides before checking vertical collisions
+        clampPlayerToBlockSides();
         // Block collisions
         let isOnPlatform = false;
 
@@ -1114,8 +1140,9 @@
         const playerBottomRow = Math.floor((player.y + player.height) / blockSize);
         const checkRows = Math.min(2 + Math.floor(Math.abs(player.velocityY) / 10), 4); // Check more rows for fast-falling
 
-        // Check collision with blocks in multiple rows below the player
-        for (let rowOffset = 0; rowOffset <= checkRows; rowOffset++) {
+        // Check collision with blocks in multiple rows around the player.
+        // Start one row higher to avoid missing collisions at high fall speeds.
+        for (let rowOffset = -1; rowOffset <= checkRows; rowOffset++) {
           const blockRow = blockRows[playerBottomRow + rowOffset];
           if (!blockRow) continue;
 
