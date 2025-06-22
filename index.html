@@ -1617,13 +1617,15 @@
           // FIXED: Only draw enemies that are fully or mostly visible with larger margin
           if (screenY >= -20 && screenY <= canvasH + 20) {
             // Increased tolerance for edge smoothing
-            // Draw floating effect (subtle up and down motion)
-            const floatOffset = Math.sin(Date.now() / 200 + enemy.x) * 3;
+            const floatOffset =
+              enemy.type === "alien"
+                ? Math.sin(Date.now() / 800 + enemy.x / 4) * 4
+                : 0;
 
             ctx.save();
             ctx.translate(
-              Math.round(enemy.x + enemy.width / 2),
-              Math.round(screenY + enemy.height / 2 + floatOffset)
+              enemy.x + enemy.width / 2,
+              screenY + enemy.height / 2 + floatOffset
             );
 
             if (enemy.type === "ufo") {
