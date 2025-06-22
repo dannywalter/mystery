@@ -1058,7 +1058,28 @@
         }
       }
 
-      // Create an electric burst effect at the given position
+      // Create a harmless poof effect at the given position
+      function createPoof(x, y) {
+        const particleCount = 6;
+        for (let i = 0; i < particleCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 2 + 1;
+
+          bullets.push({
+            x: x,
+            y: y,
+            width: 4,
+            height: 4,
+            velocityX: Math.cos(angle) * speed,
+            velocityY: Math.sin(angle) * speed,
+            isEffect: "poof",
+            createdAt: Date.now(),
+            lifetime: 300,
+          });
+        }
+      }
+
+      // Electric burst effect for future power-ups
       function createElectricBurst(x, y) {
         const particleCount = 8;
         for (let i = 0; i < particleCount; i++) {
@@ -1084,6 +1105,9 @@
         for (let i = bullets.length - 1; i >= 0; i--) {
           const bullet = bullets[i];
 
+          // Skip visual effect particles
+          if (bullet.isEffect) continue;
+
           let bulletHit = false;
 
           // Check collisions with enemies
@@ -1104,8 +1128,8 @@
               score += enemyValue;
               bulletHit = true;
 
-              // Electric burst effect on enemy death
-              createElectricBurst(
+              // Visual poof effect on enemy death
+              createPoof(
                 enemy.x + enemy.width / 2,
                 enemy.y + enemy.height / 2,
               );
@@ -1280,8 +1304,8 @@
             hitSound();
             score += enemyValue;
 
-            // Electric burst effect on enemy death
-            createElectricBurst(
+            // Visual poof effect on enemy death
+            createPoof(
               enemy.x + enemy.width / 2,
               enemy.y + enemy.height / 2,
             );
@@ -1690,6 +1714,8 @@
 
             if (b.isEffect === "electric") {
               ctx.fillStyle = "#7fdbff";
+            } else if (b.isEffect === "poof") {
+              ctx.fillStyle = "#dddddd";
             } else {
               ctx.fillStyle = "#ffffff";
             }
