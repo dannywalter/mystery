@@ -1140,8 +1140,9 @@
         const playerBottomRow = Math.floor((player.y + player.height) / blockSize);
         const checkRows = Math.min(2 + Math.floor(Math.abs(player.velocityY) / 10), 4); // Check more rows for fast-falling
 
-        // Check collision with blocks in multiple rows below the player
-        for (let rowOffset = 0; rowOffset <= checkRows; rowOffset++) {
+        // Check collision with blocks in multiple rows around the player.
+        // Start one row higher to avoid missing collisions at high fall speeds.
+        for (let rowOffset = -1; rowOffset <= checkRows; rowOffset++) {
           const blockRow = blockRows[playerBottomRow + rowOffset];
           if (!blockRow) continue;
 
