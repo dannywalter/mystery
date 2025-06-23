@@ -488,9 +488,9 @@
       const maxFallingSpeed = 15; // Reduced from 15 to match constantFallSpeed
       const playerSize = 30;
       const playerSpeed = 7;
-      const horizontalAcceleration = 1; // how quickly the player accelerates
-      const airFriction = 0.98; // horizontal slowdown while airborne
-      const groundFriction = 0.7; // horizontal slowdown when on ground
+      const horizontalAcceleration = 1.2; // how quickly the player accelerates
+      const airFriction = 0.85; // horizontal slowdown while airborne
+      const groundFriction = 0.6; // horizontal slowdown when on ground
       const jumpReleaseMultiplier = 1.5; // extra gravity when jump released early
       const playerColor = "#4299e1";
       const initialGroundHeight = 50;
@@ -541,6 +541,8 @@
       let fallSpeed = 1; // Initial vertical scroll speed
       let maxFallSpeed = 4; // Maximum vertical scroll speed
       let fallSpeedIncreaseRate = 0.0001; // How quickly fall speed increases
+      const frameDuration = 1000 / 60; // Base frame time for delta calculations
+      let lastTimestamp = 0; // Track last frame timestamp
 
       // --- Camera System ---
       let cameraY = 0;
@@ -1479,7 +1481,11 @@
         updateHealthDisplay();
       }
 
-      function gameLoop() {
+      function gameLoop(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const delta = Math.min((timestamp - lastTimestamp) / frameDuration, 3);
+        lastTimestamp = timestamp;
+
         if (!isGameStarted) {
           requestAnimationFrame(gameLoop);
           return;
@@ -1510,37 +1516,40 @@
         // Horizontal movement with inertia
         if (isMovingLeft) {
           player.velocityX = Math.max(
-            player.velocityX - horizontalAcceleration,
+            player.velocityX - horizontalAcceleration * delta,
             -playerSpeed,
           );
         } else if (isMovingRight) {
           player.velocityX = Math.min(
-            player.velocityX + horizontalAcceleration,
+            player.velocityX + horizontalAcceleration * delta,
             playerSpeed,
           );
         } else {
           // Apply friction when no input
-          player.velocityX *= player.canJump ? groundFriction : airFriction;
+          player.velocityX *= Math.pow(
+            player.canJump ? groundFriction : airFriction,
+            delta,
+          );
           if (Math.abs(player.velocityX) < 0.01) player.velocityX = 0;
         }
-        player.x += player.velocityX;
+        player.x += player.velocityX * delta;
 
         // --- Linear falling & floating ---
         const isFloating = shootPermissionGranted && isJumpButtonPressed && player.ammo > 0 && !player.canJump;
 
         if (isFloating) {
           // Hover in place while shooting - almost zero gravity
-          player.velocityY = 1; // Slight downward drift for visual effect
+          player.velocityY = 1;
           shoot();
         } else if (!player.canJump) {
           if (player.velocityY < 0) {
             // Ascending - lighter gravity while jump held
             const gMul = isJumpButtonPressed ? 0.7 : jumpReleaseMultiplier;
-            player.velocityY += normalGravity * gMul;
+            player.velocityY += normalGravity * gMul * delta;
           } else {
             // Falling - approach constant fall speed
             if (player.velocityY < constantFallSpeed) {
-              player.velocityY += normalGravity * 1.2;
+              player.velocityY += normalGravity * 1.2 * delta;
               if (player.velocityY > constantFallSpeed)
                 player.velocityY = constantFallSpeed;
             } else {
@@ -1558,7 +1567,7 @@
         }
 
         // Apply vertical movement
-        player.y += player.velocityY;
+        player.y += player.velocityY * delta;
 
         // Call collision detection *after* movement
         checkPlayerCollisions();
@@ -1739,8 +1748,8 @@
         ctx.fillStyle = "#fc8181"; // Red projectiles
         for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
           const p = enemyProjectiles[i];
-          p.y += p.velocityY;
-          p.x += p.velocityX || 0;
+          p.y += p.velocityY * delta;
+          p.x += (p.velocityX || 0) * delta;
 
           const screenY = p.y - cameraY;
 
@@ -1754,8 +1763,8 @@
         // Player bullets and visual effects
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
-          b.y += b.velocityY;
-          b.x += b.velocityX || 0;
+          b.y += b.velocityY * delta;
+          b.x += (b.velocityX || 0) * delta;
 
           const screenY = b.y - cameraY;
 
@@ -1894,7 +1903,7 @@
 
           if (enemy.type === "ufo") {
             // Simple horizontal back-and-forth movement
-            enemy.x += enemy.speed * enemy.direction;
+            enemy.x += enemy.speed * enemy.direction * delta;
 
             if (
               enemy.x < enemy.baseX - enemy.range ||
@@ -1933,8 +1942,8 @@
                 enemy.velocityY = (enemy.velocityY / currentSpeed) * enemy.speed;
               }
 
-              const newX = enemy.x + enemy.velocityX;
-              const newY = enemy.y + enemy.velocityY;
+              const newX = enemy.x + enemy.velocityX * delta;
+              const newY = enemy.y + enemy.velocityY * delta;
 
               let blocked = false;
               for (const block of blocks) {
@@ -2185,7 +2194,7 @@
       // --- Init ---
       resizeCanvas();
       setupEventListeners();
-      gameLoop();
+      requestAnimationFrame(gameLoop);
 
       // Initialize Farcade SDK when game is fully loaded
       window.FarcadeSDK.singlePlayer.actions.ready();
