@@ -488,6 +488,10 @@
       const maxFallingSpeed = 15; // Reduced from 15 to match constantFallSpeed
       const playerSize = 30;
       const playerSpeed = 7;
+      const horizontalAcceleration = 1; // how quickly the player accelerates
+      const airFriction = 0.98; // horizontal slowdown while airborne
+      const groundFriction = 0.7; // horizontal slowdown when on ground
+      const jumpReleaseMultiplier = 1.5; // extra gravity when jump released early
       const playerColor = "#4299e1";
       const initialGroundHeight = 50;
       const maxAmmo = 8;
@@ -1503,9 +1507,22 @@
         generateNewPlatforms();
 
         // --- Movement ---
-        player.velocityX = 0;
-        if (isMovingLeft) player.velocityX = -playerSpeed;
-        if (isMovingRight) player.velocityX = playerSpeed;
+        // Horizontal movement with inertia
+        if (isMovingLeft) {
+          player.velocityX = Math.max(
+            player.velocityX - horizontalAcceleration,
+            -playerSpeed,
+          );
+        } else if (isMovingRight) {
+          player.velocityX = Math.min(
+            player.velocityX + horizontalAcceleration,
+            playerSpeed,
+          );
+        } else {
+          // Apply friction when no input
+          player.velocityX *= player.canJump ? groundFriction : airFriction;
+          if (Math.abs(player.velocityX) < 0.01) player.velocityX = 0;
+        }
         player.x += player.velocityX;
 
         // --- Linear falling & floating ---
@@ -1516,24 +1533,18 @@
           player.velocityY = 1; // Slight downward drift for visual effect
           shoot();
         } else if (!player.canJump) {
-          // Create a more natural jump arc with variable gravity
-          if (player.velocityY >= 0) {
-            // Going down - use constant fall speed but ramp up to it more gradually
-            if (player.velocityY < constantFallSpeed / 2) {
-              // Start with a gentler descent
-              player.velocityY += normalGravity * 1.2;
-            } else {
-              // Then transition to the constant fall speed
-              player.velocityY = constantFallSpeed;
-            }
+          if (player.velocityY < 0) {
+            // Ascending - lighter gravity while jump held
+            const gMul = isJumpButtonPressed ? 0.7 : jumpReleaseMultiplier;
+            player.velocityY += normalGravity * gMul;
           } else {
-            // Going up - reduced gravity at the peak of the jump for "hangtime"
-            if (player.velocityY > jumpStrength / 2) {
-              // Near the peak, apply less gravity for more "float"
-              player.velocityY += normalGravity * 0.7;
+            // Falling - approach constant fall speed
+            if (player.velocityY < constantFallSpeed) {
+              player.velocityY += normalGravity * 1.2;
+              if (player.velocityY > constantFallSpeed)
+                player.velocityY = constantFallSpeed;
             } else {
-              // Early in the jump, normal gravity
-              player.velocityY += normalGravity;
+              player.velocityY = constantFallSpeed;
             }
           }
         } else {
