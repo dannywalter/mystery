@@ -1591,7 +1591,7 @@
         if (player.x + player.width > canvasW - wallWidth) player.x = canvasW - wallWidth - player.width;
 
         // --- Update enemies ---
-        updateEnemies();
+        updateEnemies(delta);
 
         // --- Check Bullet Collisions ---
         checkBulletCollisions();
@@ -1889,7 +1889,7 @@
         requestAnimationFrame(gameLoop);
       }
 
-      function updateEnemies() {
+      function updateEnemies(delta) {
         const now = Date.now();
 
         for (let i = enemies.length - 1; i >= 0; i--) {
