@@ -686,6 +686,62 @@
             extra
           )
         );
+
+        // Ensure enemy isn't spawning inside a block
+        resolveEnemyBlockCollision(enemies[enemies.length - 1]);
+      }
+
+      // Push enemy out of any overlapping blocks and bounce its velocity
+      function resolveEnemyBlockCollision(enemy) {
+        const bounce = 0.7;
+        let collided = true;
+        // Iterate until no collisions or max iterations
+        for (let iter = 0; iter < 3 && collided; iter++) {
+          collided = false;
+          for (const block of blocks) {
+            if (
+              enemy.x < block.x + block.width &&
+              enemy.x + enemy.width > block.x &&
+              enemy.y < block.y + block.height &&
+              enemy.y + enemy.height > block.y
+            ) {
+              collided = true;
+
+              const overlapLeft = enemy.x + enemy.width - block.x;
+              const overlapRight = block.x + block.width - enemy.x;
+              const overlapTop = enemy.y + enemy.height - block.y;
+              const overlapBottom = block.y + block.height - enemy.y;
+
+              const minOverlap = Math.min(
+                overlapLeft,
+                overlapRight,
+                overlapTop,
+                overlapBottom,
+              );
+
+              switch (minOverlap) {
+                case overlapLeft:
+                  enemy.x = block.x - enemy.width;
+                  if (enemy.velocityX > 0) enemy.velocityX *= -bounce;
+                  break;
+                case overlapRight:
+                  enemy.x = block.x + block.width;
+                  if (enemy.velocityX < 0) enemy.velocityX *= -bounce;
+                  break;
+                case overlapTop:
+                  enemy.y = block.y - enemy.height;
+                  if (enemy.velocityY > 0) enemy.velocityY *= -bounce;
+                  break;
+                default:
+                  enemy.y = block.y + block.height;
+                  if (enemy.velocityY < 0) enemy.velocityY *= -bounce;
+                  break;
+              }
+            }
+          }
+        }
+
+        enemy.x = Math.max(wallWidth, Math.min(enemy.x, canvasW - wallWidth - enemy.width));
       }
 
       function generatePlatformPattern(x, y) {
@@ -1889,6 +1945,19 @@
         requestAnimationFrame(gameLoop);
       }
 
+      function moveEnemyWithBounce(enemy, dx, dy) {
+
+        enemy.x += dx;
+        resolveEnemyBlockCollision(enemy);
+
+        enemy.y += dy;
+        resolveEnemyBlockCollision(enemy);
+
+        // Damp velocities slightly after a bounce
+        enemy.velocityX *= 0.99;
+        enemy.velocityY *= 0.99;
+      }
+
       function updateEnemies(delta) {
         const now = Date.now();
 
@@ -1942,29 +2011,11 @@
                 enemy.velocityY = (enemy.velocityY / currentSpeed) * enemy.speed;
               }
 
-              const newX = enemy.x + enemy.velocityX * delta;
-              const newY = enemy.y + enemy.velocityY * delta;
-
-              let blocked = false;
-              for (const block of blocks) {
-                if (
-                  newY < block.y + block.height &&
-                  newY + enemy.height > block.y &&
-                  newX < block.x + block.width &&
-                  newX + enemy.width > block.x
-                ) {
-                  blocked = true;
-                  break;
-                }
-              }
-
-              if (!blocked) {
-                enemy.x = newX;
-                enemy.y = newY;
-              } else {
-                enemy.velocityX *= -0.5;
-                enemy.velocityY *= -0.5;
-              }
+              moveEnemyWithBounce(
+                enemy,
+                enemy.velocityX * delta,
+                enemy.velocityY * delta,
+              );
             }
           }
 
