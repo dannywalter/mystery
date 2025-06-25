@@ -688,6 +688,7 @@
       function resolveEnemyBlockCollision(enemy) {
         const bounce = 0.7;
         let collided = true;
+        let bounced = false;
         // Iterate until no collisions or max iterations
         for (let iter = 0; iter < 5 && collided; iter++) {
           collided = false;
@@ -699,6 +700,7 @@
               enemy.y + enemy.height > block.y
             ) {
               collided = true;
+              bounced = true;
 
               const overlapLeft = enemy.x + enemy.width - block.x;
               const overlapRight = block.x + block.width - enemy.x;
@@ -735,6 +737,7 @@
         }
 
         enemy.x = Math.max(wallWidth, Math.min(enemy.x, canvasW - wallWidth - enemy.width));
+        return bounced;
       }
 
       function generatePlatformPattern(x, y) {
@@ -1941,14 +1944,16 @@
       function moveEnemyWithBounce(enemy, dx, dy) {
 
         enemy.x += dx;
-        resolveEnemyBlockCollision(enemy);
+        const bouncedX = resolveEnemyBlockCollision(enemy);
 
         enemy.y += dy;
-        resolveEnemyBlockCollision(enemy);
+        const bouncedY = resolveEnemyBlockCollision(enemy);
 
-        // Damp velocities slightly after a bounce
-        enemy.velocityX *= 0.99;
-        enemy.velocityY *= 0.99;
+        if (bouncedX || bouncedY) {
+          // Damp velocities slightly after a bounce
+          enemy.velocityX *= 0.99;
+          enemy.velocityY *= 0.99;
+        }
       }
 
       function updateEnemies(delta) {
