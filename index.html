@@ -2018,76 +2018,84 @@
               const a = enemies[i];
               const b = enemies[j];
 
-            if (
-              a.x < b.x + b.width &&
-              a.x + a.width > b.x &&
-              a.y < b.y + b.height &&
-              a.y + a.height > b.y
-            ) {
-              let dx = a.x + a.width / 2 - (b.x + b.width / 2);
-              let dy = a.y + a.height / 2 - (b.y + b.height / 2);
-              let dist = Math.sqrt(dx * dx + dy * dy);
-              if (dist === 0) {
-                const angle = Math.random() * Math.PI * 2;
-                dist = 0.01;
-                dx = Math.cos(angle) * dist;
-                dy = Math.sin(angle) * dist;
-              }
-              const overlap = enemySize - dist;
-              const nx = dx / dist;
-              const ny = dy / dist;
+              if (
+                a.x < b.x + b.width &&
+                a.x + a.width > b.x &&
+                a.y < b.y + b.height &&
+                a.y + a.height > b.y
+              ) {
+                let dx = a.x + a.width / 2 - (b.x + b.width / 2);
+                let dy = a.y + a.height / 2 - (b.y + b.height / 2);
 
-              const ax = a.x;
-              const ay = a.y;
-              const bx = b.x;
-              const by = b.y;
-
-              a.x += nx * (overlap / 2);
-              a.y += ny * (overlap / 2);
-              b.x -= nx * (overlap / 2);
-              b.y -= ny * (overlap / 2);
-
-              a.x = Math.max(wallWidth, Math.min(a.x, canvasW - wallWidth - a.width));
-              b.x = Math.max(wallWidth, Math.min(b.x, canvasW - wallWidth - b.width));
-              // Vertical clamping to keep enemies within reasonable bounds
-              a.y = Math.max(-a.height, Math.min(a.y, canvasH * 2));
-              b.y = Math.max(-b.height, Math.min(b.y, canvasH * 2));
-
-              for (const block of blocks) {
-                if (
-                  a.x < block.x + block.width &&
-                  a.x + a.width > block.x &&
-                  a.y < block.y + block.height &&
-                  a.y + a.height > block.y
-                ) {
-                  a.x = ax;
-                  a.y = ay;
-                  break;
+                if (dx === 0 && dy === 0) {
+                  const angle = Math.random() * Math.PI * 2;
+                  dx = Math.cos(angle) * 0.01;
+                  dy = Math.sin(angle) * 0.01;
                 }
-              }
-              for (const block of blocks) {
-                if (
-                  b.x < block.x + block.width &&
-                  b.x + b.width > block.x &&
-                  b.y < block.y + block.height &&
-                  b.y + b.height > block.y
-                ) {
-                  b.x = bx;
-                  b.y = by;
-                  break;
-                }
-              }
 
-              a.velocityX += nx * 0.2;
-              a.velocityY += ny * 0.2;
-              b.velocityX -= nx * 0.2;
-              b.velocityY -= ny * 0.2;
-              hadOverlap = true;
-              moved = true;
+                const overlapX = enemySize - Math.abs(dx);
+                const overlapY = enemySize - Math.abs(dy);
+                if (overlapX <= 0 || overlapY <= 0) continue;
+
+                const ax = a.x;
+                const ay = a.y;
+                const bx = b.x;
+                const by = b.y;
+
+                if (overlapX < overlapY) {
+                  const push = (overlapX / 2) * Math.sign(dx);
+                  a.x += push;
+                  b.x -= push;
+                } else {
+                  const push = (overlapY / 2) * Math.sign(dy);
+                  a.y += push;
+                  b.y -= push;
+                }
+
+                a.x = Math.max(wallWidth, Math.min(a.x, canvasW - wallWidth - a.width));
+                b.x = Math.max(wallWidth, Math.min(b.x, canvasW - wallWidth - b.width));
+                // Vertical clamping to keep enemies within reasonable bounds
+                a.y = Math.max(-a.height, Math.min(a.y, canvasH * 2));
+                b.y = Math.max(-b.height, Math.min(b.y, canvasH * 2));
+
+                for (const block of blocks) {
+                  if (
+                    a.x < block.x + block.width &&
+                    a.x + a.width > block.x &&
+                    a.y < block.y + block.height &&
+                    a.y + a.height > block.y
+                  ) {
+                    a.x = ax;
+                    a.y = ay;
+                    break;
+                  }
+                }
+                for (const block of blocks) {
+                  if (
+                    b.x < block.x + block.width &&
+                    b.x + b.width > block.x &&
+                    b.y < block.y + block.height &&
+                    b.y + b.height > block.y
+                  ) {
+                    b.x = bx;
+                    b.y = by;
+                    break;
+                  }
+                }
+
+                if (overlapX < overlapY) {
+                  a.velocityX += Math.sign(dx) * 0.2;
+                  b.velocityX -= Math.sign(dx) * 0.2;
+                } else {
+                  a.velocityY += Math.sign(dy) * 0.2;
+                  b.velocityY -= Math.sign(dy) * 0.2;
+                }
+                hadOverlap = true;
+                moved = true;
+              }
             }
           }
-        }
-        iter++;
+          iter++;
         } while (hadOverlap && iter < MAX_ITERS);
         return moved;
       }
