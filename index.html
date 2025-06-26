@@ -526,6 +526,7 @@
       const enemyValue = 100; // Score points
       const pickupDropChance = 1; // 100% chance
       const blockDestructionValue = 15; // Score points for destroying a block
+      const MAX_ITERS = 10; // Max iterations for resolving deep overlaps
 
       // --- Cached canvas dimensions ---
       let canvasW = 0;
@@ -2007,10 +2008,15 @@
 
       // Push overlapping enemies apart and nudge their velocities
       function resolveEnemyCollisions() {
-        for (let i = 0; i < enemies.length; i++) {
-          for (let j = i + 1; j < enemies.length; j++) {
-            const a = enemies[i];
-            const b = enemies[j];
+        let iter = 0;
+        let moved = false;
+        let hadOverlap;
+        do {
+          hadOverlap = false;
+          for (let i = 0; i < enemies.length; i++) {
+            for (let j = i + 1; j < enemies.length; j++) {
+              const a = enemies[i];
+              const b = enemies[j];
 
             if (
               a.x < b.x + b.width &&
@@ -2037,6 +2043,9 @@
 
               a.x = Math.max(wallWidth, Math.min(a.x, canvasW - wallWidth - a.width));
               b.x = Math.max(wallWidth, Math.min(b.x, canvasW - wallWidth - b.width));
+              // Vertical clamping to keep enemies within reasonable bounds
+              a.y = Math.max(-a.height, Math.min(a.y, canvasH * 2));
+              b.y = Math.max(-b.height, Math.min(b.y, canvasH * 2));
 
               for (const block of blocks) {
                 if (
@@ -2067,9 +2076,14 @@
               a.velocityY += ny * 0.2;
               b.velocityX -= nx * 0.2;
               b.velocityY -= ny * 0.2;
+              hadOverlap = true;
+              moved = true;
             }
           }
         }
+        iter++;
+        } while (hadOverlap && iter < MAX_ITERS);
+        return moved;
       }
 
       function drawGameOver() {
