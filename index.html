@@ -1953,11 +1953,14 @@
             }
 
             if (!hitBlock) {
-              enemy.x = newX;
+-              enemy.x = newX;
++              enemy.x = Math.max(
++                wallWidth,
++                Math.min(newX, canvasW - wallWidth - enemy.width),
++              );
             } else {
               enemy.direction *= -1;
             }
-
             if (
               enemy.x < enemy.baseX - enemy.range ||
               enemy.x > enemy.baseX + enemy.range ||
