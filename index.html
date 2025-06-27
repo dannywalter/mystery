@@ -1412,38 +1412,32 @@
             // Only count if player is falling down onto enemy
             player.velocityY > 0
           ) {
-            // Player jumped on enemy
+            // Player jumped on enemy - kill instantly
             hitSound();
-            enemy.health =
-              (enemy.health ?? (enemy.type === "ufo" ? 4 : 1)) - 1;
-            enemy.flashTimer = 10;
+            enemies.splice(i, 1);
+            score += enemyValue;
 
-            if (enemy.health <= 0) {
-              enemies.splice(i, 1);
-              score += enemyValue;
-
-              // Visual poof effect on enemy death
-              createPoof(
-                enemy.x + enemy.width / 2,
-                enemy.y + enemy.height / 2,
-              );
-
-              // Chance to drop a pickup
-              if (Math.random() < pickupDropChance) {
-                pickups.push({
-                  x: enemy.x + enemy.width / 2 - pickupSize / 2,
-                  y: enemy.y + enemy.height / 2 - pickupSize / 2,
-                  width: pickupSize,
-                  height: pickupSize,
-                  type: "point",
-                  frameIndex: 0, // Starting frame for animation
-                  frameCounter: Math.floor(Math.random() * coinFrameCount), // Random start point for animation
-                });
-              }
-            }
+            // Visual poof effect on enemy death
+            createPoof(
+              enemy.x + enemy.width / 2,
+              enemy.y + enemy.height / 2,
+            );
 
             // Bounce the player
             player.velocityY = jumpStrength / 1.5;
+
+            // Chance to drop a pickup
+            if (Math.random() < pickupDropChance) {
+              pickups.push({
+                x: enemy.x + enemy.width / 2 - pickupSize / 2,
+                y: enemy.y + enemy.height / 2 - pickupSize / 2,
+                width: pickupSize,
+                height: pickupSize,
+                type: "point",
+                frameIndex: 0, // Starting frame for animation
+                frameCounter: Math.floor(Math.random() * coinFrameCount), // Random start point for animation
+              });
+            }
           }
         }
 
