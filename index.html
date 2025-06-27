@@ -739,11 +739,11 @@
           const width = Math.min(2, availableWidth); // FIXED: Cap to available space
           createPlatformBlocks(x, y, width, 2);
           return { width: width * blockSize, height: 2 * blockSize };
-        } else if (patternType < 0.9) {
+        } else if (patternType < 0.85) {
           // Single block (allows the player to create path by destroying adjacent blocks)
           createPlatformBlocks(x, y, 1, 1);
           return { width: blockSize, height: blockSize };
-        } else if (patternType < 0.95) {
+        } else if (patternType < 0.9) {
           // Wide platform with a gap (2-1-2 pattern) - FIXED: Only if enough space
           if (availableWidth >= 5) {
             createPlatformBlocks(x, y, 2, 1);
@@ -756,7 +756,7 @@
             return { width: width * blockSize, height: blockSize };
           }
         } else {
-          // NEW: Indestructible thin platform (1x3-1x7)
+          // NEW: Indestructible thin platform (1x3-1x7) - appears ~10% of the time
           const width = Math.min(Math.floor(Math.random() * 5) + 3, Math.min(availableWidth, 7));
           createPlatformBlocks(x, y, width, 1, "unbreakable", hardBlockHeight);
           return { width: width * blockSize, height: hardBlockHeight };
