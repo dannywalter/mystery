@@ -1936,8 +1936,27 @@
           }
 
           if (enemy.type === "ufo") {
-            // Simple horizontal back-and-forth movement
-            enemy.x += enemy.speed * enemy.direction * delta;
+            // Simple horizontal back-and-forth movement with block avoidance
+            const newX = enemy.x + enemy.speed * enemy.direction * delta;
+
+            let hitBlock = false;
+            for (const block of blocks) {
+              if (
+                enemy.y < block.y + block.height &&
+                enemy.y + enemy.height > block.y &&
+                newX < block.x + block.width &&
+                newX + enemy.width > block.x
+              ) {
+                hitBlock = true;
+                break;
+              }
+            }
+
+            if (!hitBlock) {
+              enemy.x = newX;
+            } else {
+              enemy.direction *= -1;
+            }
 
             if (
               enemy.x < enemy.baseX - enemy.range ||
@@ -2087,9 +2106,11 @@
 
                 a.x = Math.max(wallWidth, Math.min(a.x, canvasW - wallWidth - a.width));
                 b.x = Math.max(wallWidth, Math.min(b.x, canvasW - wallWidth - b.width));
-                // Vertical clamping to keep enemies within reasonable bounds
-                a.y = Math.max(-a.height, Math.min(a.y, canvasH * 2));
-                b.y = Math.max(-b.height, Math.min(b.y, canvasH * 2));
+                // Vertical clamping relative to camera to prevent teleporting far away
+                const minY = cameraY - canvasH * 2;
+                const maxY = cameraY + canvasH * 2;
+                a.y = Math.max(minY, Math.min(a.y, maxY));
+                b.y = Math.max(minY, Math.min(b.y, maxY));
 
                 for (const block of blocks) {
                   if (
